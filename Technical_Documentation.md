@@ -34,25 +34,25 @@ The Enterprise Data Aggregation & Comparison Platform enables compliance officer
 ```mermaid
 graph TB
     subgraph "Client Tier"
-        A["React Frontend\nPort: 3000"]
-        B["Mobile App\n(Future)"]
+        A[React Frontend<br/>Port: 3000]
+        B[Mobile App<br/>(Future)]
     end
     
     subgraph "Application Tier"
-        C["Flask API Server\nPort: 5000"]
-        D["Background Workers\nCelery"]
-        E["Redis Cache\nPort: 6379"]
+        C[Flask API Server<br/>Port: 5000]
+        D[Background Workers<br/>Celery]
+        E[Redis Cache<br/>Port: 6379]
     end
     
     subgraph "Data Tier"
-        F["PostgreSQL\nPort: 5432"]
-        G["File Storage\nReports & Exports"]
+        F[PostgreSQL<br/>Port: 5432]
+        G[File Storage<br/>Reports & Exports]
     end
     
     subgraph "External Services"
-        H["INSEE SIRENE API"]
-        I["data.gouv.fr API"]
-        J["Email Service\nSMTP"]
+        H[INSEE SIRENE API]
+        I[data.gouv.fr API]
+        J[Email Service<br/>SMTP]
     end
     
     A --> C
@@ -64,18 +64,13 @@ graph TB
     D --> I
     D --> J
     
-    classDef client fill:#e1f5fe,stroke:#039be5;
-    classDef app fill:#f3e5f5,stroke:#ab47bc;
-    classDef data fill:#e8f5e8,stroke:#43a047;
-    classDef external fill:#fff3e0,stroke:#ff9800;
-    
-    class A,B client;
-    class C,D,E app;
-    class F,G data;
-    class H,I,J external;
+    style A fill:#e1f5fe
+    style C fill:#f3e5f5
+    style F fill:#e8f5e8
+    style H fill:#fff3e0
 ```
-### Technology Stack
 
+### Technology Stack
 
 | Component | Technology | Version | Justification |
 |-----------|------------|---------|---------------|
