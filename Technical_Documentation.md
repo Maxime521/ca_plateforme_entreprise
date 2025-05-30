@@ -73,7 +73,6 @@ graph TB
     class C,D,E app;
     class F,G data;
     class H,I,J external;
-
 ### Technology Stack
 
 | Component | Technology | Version | Justification |
