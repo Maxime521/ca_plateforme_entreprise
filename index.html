@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plateforme Entreprise</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="#" class="navbar-brand">
+                <div class="logo"></div>
+                Plateforme Entreprise
+            </a>
+            
+            <ul class="navbar-nav">
+                <li><a href="#accueil">Accueil</a></li>
+                <li><a href="#recherche">Recherche</a></li>
+                <li><a href="#donnees">Données</a></li>
+                <li><a href="#analyses">Analyses</a></li>
+                <li><a href="#aide">Aide</a></li>
+            </ul>
+
+            <div class="login-section" id="loginSection">
+                <a href="login/login.html" class="register-btn">S'inscrire</a>
+                <button class="login-btn" onclick="">Se connecter</button>
+            </div>
+
+            <div class="user-menu" id="userMenu">
+                <span style="color: #4a5568; font-weight: 500;">Bonjour, <span id="userName">Utilisateur</span></span>
+                <div class="dropdown">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="dropdown-content">
+                        <a href="#" class="dropdown-item">Mon profil</a>
+                        <a href="#" class="dropdown-item">Mes recherches</a>
+                        <a href="#" class="dropdown-item">Paramètres</a>
+                        <a href="#" class="dropdown-item" onclick="logout()">Déconnexion</a>
+                    </div>
+                </div>
+            </div>
+
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Plateforme Entreprise</h1>
+            <p>Système d'information et de recherche d'entreprises</p>
+        </div>
+
+        <div class="main-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h2>Rechercher une entreprise</h2>
+                <p>Recherchez des informations détaillées sur les entreprises françaises grâce à notre base de données complète et mise à jour régulièrement.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h2>Collecter des données et documents justificatifs en open data</h2>
+                <p>Accédez aux données publiques et documents officiels des entreprises dans un format ouvert et réutilisable.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h2>Agréger et restituer les données</h2>
+                <p>Consolidez et analysez les informations collectées pour obtenir une vue d'ensemble claire et structurée.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h2>Comparer aux données d'un SI</h2>
+                <p>Effectuez des comparaisons avec vos systèmes d'information internes pour identifier les écarts et opportunités.</p>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <h2 style="margin-bottom: 20px; color: #2d3748;">Recherche d'entreprise</h2>
+            
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('fiche')">Fiche résumé</div>
+                <div class="tab" onclick="switchTab('dirigeants')">Dirigeants</div>
+                <div class="tab" onclick="switchTab('documents')">Documents</div>
+                <div class="tab" onclick="switchTab('finances')">Données financières</div>
+                <div class="tab" onclick="switchTab('annonces')">Annonces et observations</div>
+            </div>
+
+            <div class="search-form">
+                <input type="text" class="search-input" placeholder="Nom de l'entreprise, SIREN, SIRET..." id="searchInput">
+                <button class="search-btn" onclick="searchCompany()">Rechercher</button>
+            </div>
+
+            <div id="searchResults" class="hidden">
+                <div class="company-info">
+                    <h3 style="color: #2d3748; margin-bottom: 15px;">LA MIE GOURMANDE (LA MIE GOURMANDE)</h3>
+                    
+                    <div class="info-grid">
+                        <div>
+                            <div class="info-item">
+                                <span class="info-label">État des inscriptions</span>
+                                <span class="info-value">
+                                    <span class="status-badge status-active">Inscrite (Insee)</span>
+                                    le 02/05/2012
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Immatriculée au RNE (INPI)</span>
+                                <span class="info-value">le 02/05/2012</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">SIREN</span>
+                                <span class="info-value">789 204 880</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">SIRET du siège social</span>
+                                <span class="info-value">789 204 880 00015</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="info-item">
+                                <span class="info-label">N° TVA intracommunautaire</span>
+                                <span class="info-value">Pas de n° TVA valide connu</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">N° EORI</span>
+                                <span class="info-value">Pas de n° EORI valide</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Activité principale (NAF/APE)</span>
+                                <span class="info-value">Boulangerie et boulangerie-pâtisserie</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Code NAF/APE</span>
+                                <span class="info-value">10.71C</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; text-align: center;">
+                        <a href="#" class="btn-secondary">📄 Avis de situation</a>
+                        <a href="#" class="btn-secondary">📋 Extrait RNE</a>
+                        <button class="search-btn" style="margin-left: 10px;">Une question ❓</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="contact-section">
+            <h3>Contact</h3>
+            <a href="mailto:olivier.matz@ca-toulouse31.fr" class="contact-email">olivier.matz@ca-toulouse31.fr</a>
+        </div>
+    </div>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>
