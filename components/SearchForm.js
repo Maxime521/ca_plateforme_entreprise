@@ -29,20 +29,14 @@ export default function SearchForm({ onSearch, loading }) {
           className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
           disabled={loading}
         />
-        <button
-          type="submit"
-          disabled={loading || !query.trim()}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-        >
-          <button
-            type="submit"
-            disabled={loading || !query.trim()}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Rechercher
-          </button>
-        </button>
-      </div>
+  <button
+    type="submit"
+    disabled={loading || !query.trim()}
+    className="absolute inset-y-0 right-0 flex items-center bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    Rechercher
+  </button>
+</div>
     </form>
   )
 }
