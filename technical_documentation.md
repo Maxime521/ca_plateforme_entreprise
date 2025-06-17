@@ -1,185 +1,637 @@
-# 📋 Technical Documentation: Enterprise Data Aggregation & Comparison Platform
+# 🏗️ Technical Architecture Documentation
 
-## 0. User Stories and Mockups
+## Enterprise Data Aggregation & Comparison Platform
 
-### Prioritized User Stories (MoSCoW Method)
+## Table of Contents
 
-#### Must Have (M)
-1. **US-001**: As a compliance officer, I want to search for French enterprise data using SIRET/SIREN numbers, so that I can validate company information against our internal systems.
-2. **US-002**: As a data analyst, I want to compare retrieved enterprise data with internal records, so that I can identify discrepancies and data quality issues.
-3. **US-003**: As a compliance officer, I want to export comparison results to CSV and PDF formats, so that I can share findings with stakeholders and maintain audit trails.
-4. **US-004**: As a user, I want to view enterprise data in a structured format, so that I can easily understand company information (name, address, activity codes, etc.).
+1. [System Overview](#system-overview)
+2. [Architecture Design](#architecture-design)
+3. [User Stories & Requirements](#user-stories--requirements)
+4. [Component Design](#component-design)
+5. [Database Design](#database-design)
+6. [API Specifications](#api-specifications)
+7. [Sequence Diagrams](#sequence-diagrams)
+8. [Implementation Plan](#implementation-plan)
+9. [Development Guidelines](#development-guidelines)
 
-#### Should Have (S)
-5. **US-005**: As a data analyst, I want to batch process multiple enterprise searches, so that I can efficiently validate large datasets.
-6. **US-006**: As a user, I want to see the data source and last update timestamp, so that I can assess data freshness and reliability.
-7. **US-007**: As a compliance officer, I want to filter and sort comparison results, so that I can focus on specific discrepancies or patterns.
+## System Overview
 
-#### Could Have (C)
-8. **US-008**: As a user, I want to save frequently used search queries, so that I can quickly repeat common validation tasks.
-9. **US-009**: As a user, I want to see a dashboard with recent searches and statistics, so that I can track my validation activities.
+The Enterprise Data Aggregation & Comparison Platform enables compliance officers and data analysts to validate French enterprise information by comparing external data sources (INSEE SIRENE) with internal records. The system provides automated data retrieval, intelligent comparison, and comprehensive reporting capabilities.
 
-#### Won't Have (W)
-10. **US-010**: As a user, I want real-time notifications when external data changes, so that I can proactively update internal records. (Out of scope for MVP)
+### Key Features
 
-### Key UI Mockups Description
-- **Search Interface**: Clean search form with SIRET/SIREN input field and search button
-- **Results Display**: Split-screen layout showing external data on left, internal data on right, with highlighted differences
-- **Comparison Dashboard**: Table view with filtering options and export buttons
-- **Report Preview**: Modal or separate page showing formatted comparison report before export
+- 🔍 **Enterprise Search**: SIRET/SIREN number validation and lookup
+- 📊 **Data Comparison**: Intelligent comparison with similarity scoring
+- 📈 **Batch Processing**: Handle large datasets efficiently
+- 📋 **Export Capabilities**: CSV and PDF report generation
+- 🚀 **High Performance**: Optimized queries and caching
+- 🔒 **Secure & Reliable**: Rate limiting, error handling, and data validation
 
----
+## Architecture Design
 
-## 1. System Architecture
+### High-Level Architecture
 
-### High-Level Architecture Diagram
-
+```mermaid
+graph TB
+    subgraph "Client Tier"
+        A["React Frontend\nPort: 3000"]
+        B["Mobile App\n(Future)"]
+    end
+    
+    subgraph "Application Tier"
+        C["Flask API Server\nPort: 5000"]
+        D["Background Workers\nCelery"]
+        E["Redis Cache\nPort: 6379"]
+    end
+    
+    subgraph "Data Tier"
+        F["PostgreSQL\nPort: 5432"]
+        G["File Storage\nReports & Exports"]
+    end
+    
+    subgraph "External Services"
+        H["INSEE SIRENE API"]
+        I["data.gouv.fr API"]
+        J["Email Service\nSMTP"]
+    end
+    
+    A --> C
+    C --> D
+    C --> E
+    C --> F
+    C --> G
+    D --> H
+    D --> I
+    D --> J
+    
+    classDef client fill:#333333,stroke:#ffffff,stroke-width:2px,color:#ffffff;
+    classDef app fill:#555555,stroke:#dddddd,stroke-dasharray:5 5,color:#ffffff;
+    classDef data fill:#222222,stroke:#ffffff,stroke-width:3px,color:#ffffff;
+    classDef external fill:#444444,stroke:#bbbbbb,stroke-dasharray:3 3,color:#ffffff;
+    
+    class A,B client;
+    class C,D,E app;
+    class F,G data;
+    class H,I,J external;
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────────┐
-│   React.js      │    │   Python/Flask   │    │   INSEE/SIRENE      │
-│   Frontend      │◄──►│   Backend API    │◄──►│   External APIs     │
-│                 │    │                  │    │                     │
-└─────────────────┘    └──────────────────┘    └─────────────────────┘
-         │                        │
-         │                        ▼
-         │              ┌──────────────────┐
-         │              │   PostgreSQL     │
-         └──────────────►│   Database       │
-                        │                  │
-                        └──────────────────┘
 
-Data Flow:
-1. User initiates search through React frontend
-2. Frontend sends API request to Flask backend
-3. Backend queries INSEE/SIRENE APIs for enterprise data
-4. Backend processes and stores data in PostgreSQL
-5. Backend compares external data with internal records
-6. Results returned to frontend for display
-7. User can export results as CSV/PDF
+### Technology Stack
+
+| Component | Technology | Version | Justification |
+|-----------|------------|---------|---------------|
+| **Frontend** | React | 18+ | Component-based architecture, rich ecosystem, team expertise |
+| **Backend** | Flask + Python | 3.9+ | Lightweight framework, excellent data processing (Pandas) |
+| **Database** | PostgreSQL | 14+ | JSONB support, ACID compliance, full-text search |
+| **Cache** | Redis | 7+ | Fast in-memory storage, session management |
+| **Queue** | Celery + Redis | 5+ | Asynchronous processing for batch operations |
+| **Containerization** | Docker | 20+ | Consistent environments, easy deployment |
+
+### Deployment Architecture
+
+```mermaid
+graph TB
+    subgraph "Load Balancer"
+        LB[Nginx/Traefik]
+    end
+    
+    subgraph "Application Layer"
+        APP1[Flask App 1]
+        APP2[Flask App 2]
+        APP3[Flask App N]
+    end
+    
+    subgraph "Worker Layer"
+        W1[Celery Worker 1]
+        W2[Celery Worker 2]
+    end
+    
+    subgraph "Data Layer"
+        DB[(PostgreSQL Primary)]
+        DB_R[(PostgreSQL Replica)]
+        REDIS[(Redis Cluster)]
+    end
+    
+    LB --> APP1
+    LB --> APP2
+    LB --> APP3
+    
+    APP1 --> DB
+    APP2 --> DB
+    APP3 --> DB
+    
+    W1 --> DB
+    W2 --> DB
+    
+    APP1 --> REDIS
+    APP2 --> REDIS
+    APP3 --> REDIS
+    
+    DB --> DB_R
 ```
 
-### Component Responsibilities
-- **Frontend**: User interface, data visualization, export functionality
-- **Backend API**: Business logic, data processing, external API integration
-- **Database**: Data persistence, caching, internal records storage
-- **External APIs**: Source of truth for French enterprise data
+## User Stories & Requirements
 
----
+### Epic 1: Enterprise Search & Validation
 
-## 2. Components, Classes, and Database Design
+#### Must Have (Priority 1)
 
-### Backend Components and Classes
+**US-001: Basic Enterprise Search**
+```gherkin
+As a compliance officer
+I want to search for French enterprises using SIRET/SIREN numbers
+So that I can validate company information against official sources
 
-#### Core Classes
+Acceptance Criteria:
+- Search accepts both SIRET (14 digits) and SIREN (9 digits)
+- Input validation with clear error messages
+- Results display within 3 seconds
+- Fallback to secondary API if primary fails
+```
+
+**US-002: Data Comparison**
+```gherkin
+As a data analyst
+I want to compare retrieved enterprise data with internal records
+So that I can identify discrepancies and data quality issues
+
+Acceptance Criteria:
+- Side-by-side comparison view
+- Highlighted differences with severity levels
+- Similarity score calculation (0-100%)
+- Field-level difference tracking
+```
+
+**US-003: Export Functionality**
+```gherkin
+As a compliance officer
+I want to export comparison results to CSV and PDF formats
+So that I can share findings with stakeholders and maintain audit trails
+
+Acceptance Criteria:
+- CSV export with all comparison data
+- PDF report with formatted layout
+- Batch export for multiple comparisons
+- Download progress indication
+```
+
+#### Should Have (Priority 2)
+
+**US-004: Batch Processing**
+```gherkin
+As a data analyst
+I want to process multiple enterprise searches in batch
+So that I can efficiently validate large datasets
+
+Acceptance Criteria:
+- Upload CSV file with identifiers
+- Progress tracking for batch operations
+- Email notification on completion
+- Error handling for failed lookups
+```
+
+**US-005: Search History & Analytics**
+```gherkin
+As a user
+I want to see my search history and usage statistics
+So that I can track my validation activities and identify patterns
+
+Acceptance Criteria:
+- Recent searches list
+- Usage statistics dashboard
+- Saved search templates
+- Performance metrics
+```
+
+## Component Design
+
+### Backend Architecture
+
+#### Core Models
 
 ```python
 # models/enterprise.py
+from dataclasses import dataclass, asdict
+from datetime import datetime
+from typing import Dict, List, Optional
+
+@dataclass
 class Enterprise:
-    def __init__(self):
-        self.siret: str
-        self.siren: str
-        self.company_name: str
-        self.legal_form: str
-        self.address: dict
-        self.activity_code: str
-        self.activity_description: str
-        self.creation_date: datetime
-        self.status: str
-        self.employee_count: int
-        self.last_updated: datetime
+    """Enterprise data model for external and internal records."""
     
-    def to_dict(self) -> dict
-    def from_insee_data(self, data: dict) -> 'Enterprise'
+    siret: str
+    siren: str
+    company_name: str
+    legal_form: Optional[str] = None
+    address: Optional[Dict] = None
+    activity_code: Optional[str] = None
+    activity_description: Optional[str] = None
+    creation_date: Optional[datetime] = None
+    status: Optional[str] = None
+    employee_count: Optional[int] = None
+    data_source: str = "UNKNOWN"
+    last_updated: Optional[datetime] = None
+    
+    def to_dict(self) -> Dict:
+        """Convert enterprise to dictionary."""
+        return asdict(self)
+    
+    @classmethod
+    def from_insee_data(cls, data: Dict) -> 'Enterprise':
+        """Create Enterprise from INSEE API response."""
+        establishment = data.get('etablissement', {})
+        return cls(
+            siret=establishment.get('siret'),
+            siren=establishment.get('siren'),
+            company_name=establishment.get('denominationUniteLegale'),
+            legal_form=establishment.get('categorieJuridiqueUniteLegale'),
+            address=cls._parse_address(establishment),
+            activity_code=establishment.get('activitePrincipaleEtablissement'),
+            creation_date=cls._parse_date(establishment.get('dateCreationEtablissement')),
+            status=establishment.get('etatAdministratifEtablissement'),
+            employee_count=establishment.get('trancheEffectifsEtablissement'),
+            data_source="INSEE",
+            last_updated=datetime.utcnow()
+        )
+    
+    @staticmethod
+    def _parse_address(establishment: Dict) -> Dict:
+        """Parse address from establishment data."""
+        return {
+            'street': establishment.get('numeroVoieEtablissement', '') + ' ' + 
+                     establishment.get('typeVoieEtablissement', '') + ' ' + 
+                     establishment.get('libelleVoieEtablissement', ''),
+            'city': establishment.get('libelleCommuneEtablissement'),
+            'postal_code': establishment.get('codePostalEtablissement'),
+            'country': 'France'
+        }
+```
 
+#### Service Layer
+
+```python
 # services/data_aggregator.py
+from typing import List, Optional, Dict
+import asyncio
+from .api_client import APIClient
+from .comparison_engine import ComparisonEngine
+from ..models.enterprise import Enterprise
+
 class DataAggregator:
-    def __init__(self, api_client: APIClient):
-        self.api_client = api_client
-        self.db_manager = DatabaseManager()
+    """Main service for aggregating and processing enterprise data."""
     
-    def fetch_enterprise_data(self, identifier: str) -> Enterprise
-    def process_and_store(self, enterprise: Enterprise) -> bool
-    def compare_with_internal(self, external_data: Enterprise) -> ComparisonResult
+    def __init__(self):
+        self.api_client = APIClient()
+        self.comparison_engine = ComparisonEngine()
+    
+    async def fetch_enterprise_data(self, identifier: str, id_type: str) -> Optional[Enterprise]:
+        """Fetch enterprise data from external APIs with fallback."""
+        try:
+            # Try INSEE API first
+            data = await self.api_client.get_enterprise(identifier, id_type)
+            enterprise = Enterprise.from_insee_data(data)
+            
+            # Cache the result
+            await self._cache_enterprise_data(enterprise)
+            
+            return enterprise
+            
+        except APIException as e:
+            logger.warning(f"Primary API failed: {e}, trying fallback")
+            return await self._try_fallback_api(identifier, id_type)
+    
+    async def process_batch(self, identifiers: List[str], id_type: str) -> Dict:
+        """Process multiple enterprises in batch."""
+        tasks = [
+            self.fetch_enterprise_data(identifier, id_type) 
+            for identifier in identifiers
+        ]
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        return {
+            'successful': [r for r in results if isinstance(r, Enterprise)],
+            'failed': [r for r in results if isinstance(r, Exception)],
+            'total': len(identifiers)
+        }
+    
+    async def compare_with_internal(self, external_enterprise: Enterprise, internal_id: int) -> Dict:
+        """Compare external data with internal record."""
+        internal_enterprise = await self._get_internal_record(internal_id)
+        if not internal_enterprise:
+            raise ValueError(f"Internal record {internal_id} not found")
+        
+        comparison = self.comparison_engine.compare_enterprises(
+            external_enterprise, internal_enterprise
+        )
+        
+        # Store comparison result
+        await self._store_comparison_result(comparison)
+        
+        return comparison.to_dict()
+```
 
-# services/comparison_engine.py
-class ComparisonEngine:
-    def compare_enterprises(self, external: Enterprise, internal: Enterprise) -> ComparisonResult
-    def generate_report(self, comparison: ComparisonResult, format: str) -> bytes
-    def highlight_differences(self, comparison: ComparisonResult) -> dict
+#### API Client with Circuit Breaker
 
-# utils/api_client.py
+```python
+# services/api_client.py
+import httpx
+import asyncio
+from typing import Dict, Optional
+from circuitbreaker import circuit
+from .rate_limiter import AsyncRateLimiter
+
 class APIClient:
-    def __init__(self, base_url: str, api_key: str = None):
-        self.base_url = base_url
-        self.session = requests.Session()
+    """INSEE SIRENE API client with circuit breaker and retry logic."""
     
-    def get_enterprise_by_siret(self, siret: str) -> dict
-    def get_enterprise_by_siren(self, siren: str) -> dict
-    def handle_api_errors(self, response: requests.Response) -> dict
+    def __init__(self):
+        self.base_url = "https://api.insee.fr/entreprises/sirene/v3"
+        self.fallback_url = "https://entreprise.data.gouv.fr/api/sirene/v3"
+        self.client = httpx.AsyncClient(
+            timeout=httpx.Timeout(30.0),
+            limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
+        )
+        self.rate_limiter = AsyncRateLimiter(30, 60)  # 30 requests per minute
+    
+    @circuit(failure_threshold=5, recovery_timeout=60)
+    async def get_enterprise(self, identifier: str, id_type: str) -> Dict:
+        """Get enterprise data with circuit breaker protection."""
+        await self.rate_limiter.acquire()
+        
+        endpoint = f"/{id_type}/{identifier}"
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Accept": "application/json"
+        }
+        
+        response = await self.client.get(
+            f"{self.base_url}{endpoint}",
+            headers=headers
+        )
+        
+        if response.status_code == 404:
+            raise EnterpriseNotFoundException(f"Enterprise {identifier} not found")
+        elif response.status_code == 429:
+            raise RateLimitExceededException("API rate limit exceeded")
+        elif response.status_code >= 400:
+            raise APIException(f"API error: {response.status_code}")
+        
+        return response.json()
 ```
 
-#### Frontend Components
+### Frontend Architecture
 
-```javascript
+#### Component Hierarchy
+
+```
+App
+├── Layout
+│   ├── Header
+│   ├── Navigation
+│   └── Footer
+├── Pages
+│   ├── SearchPage
+│   │   ├── SearchForm
+│   │   ├── SearchResults
+│   │   └── RecentSearches
+│   ├── ComparisonPage
+│   │   ├── ComparisonView
+│   │   ├── DifferenceHighlight
+│   │   └── ExportButtons
+│   ├── BatchPage
+│   │   ├── FileUpload
+│   │   ├── BatchProgress
+│   │   └── BatchResults
+│   └── DashboardPage
+│       ├── StatsCards
+│       ├── RecentActivity
+│       └── Charts
+└── Common
+    ├── LoadingSpinner
+    ├── ErrorBoundary
+    ├── Notifications
+    └── Modal
+```
+
+#### Key React Components
+
+```jsx
 // components/SearchForm.jsx
+import React, { useState } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
+import { validateSIRET, validateSIREN } from '../utils/validation';
+
 const SearchForm = ({ onSearch, loading }) => {
-  // Handles user input and search submission
-}
+  const [query, setQuery] = useState('');
+  const [searchType, setSearchType] = useState('auto');
+  const [errors, setErrors] = useState({});
+  
+  const debouncedQuery = useDebounce(query, 300);
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const validationErrors = validateInput(query, searchType);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
+    try {
+      await onSearch(query, searchType);
+      setErrors({});
+    } catch (error) {
+      setErrors({ submit: error.message });
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit} className="search-form">
+      <div className="form-group">
+        <label htmlFor="query">SIRET/SIREN Number</label>
+        <input
+          id="query"
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Enter SIRET (14 digits) or SIREN (9 digits)"
+          className={errors.query ? 'error' : ''}
+          maxLength={14}
+        />
+        {errors.query && <span className="error-text">{errors.query}</span>}
+      </div>
+      
+      <div className="form-group">
+        <label htmlFor="searchType">Search Type</label>
+        <select
+          id="searchType"
+          value={searchType}
+          onChange={(e) => setSearchType(e.target.value)}
+        >
+          <option value="auto">Auto-detect</option>
+          <option value="siret">SIRET</option>
+          <option value="siren">SIREN</option>
+        </select>
+      </div>
+      
+      <button 
+        type="submit" 
+        disabled={loading || !query.trim()}
+        className="btn btn-primary"
+      >
+        {loading ? 'Searching...' : 'Search'}
+      </button>
+    </form>
+  );
+};
 
+export default SearchForm;
+```
+
+```jsx
 // components/ComparisonView.jsx
+import React, { useMemo } from 'react';
+import { DifferenceHighlight } from './DifferenceHighlight';
+import { SimilarityScore } from './SimilarityScore';
+
 const ComparisonView = ({ externalData, internalData, differences }) => {
-  // Displays side-by-side comparison with highlighted differences
-}
+  const organizedDifferences = useMemo(() => {
+    return differences.reduce((acc, diff) => {
+      acc[diff.field] = diff;
+      return acc;
+    }, {});
+  }, [differences]);
+  
+  const fields = [
+    'company_name', 'legal_form', 'address', 
+    'activity_code', 'status', 'employee_count'
+  ];
+  
+  return (
+    <div className="comparison-view">
+      <div className="comparison-header">
+        <h2>Data Comparison</h2>
+        <SimilarityScore 
+          score={calculateSimilarityScore(differences)} 
+        />
+      </div>
+      
+      <div className="comparison-grid">
+        <div className="external-data">
+          <h3>External Data (INSEE)</h3>
+          {fields.map(field => (
+            <div key={field} className="field-row">
+              <label>{formatFieldName(field)}</label>
+              <DifferenceHighlight
+                value={externalData[field]}
+                difference={organizedDifferences[field]}
+                side="external"
+              />
+            </div>
+          ))}
+        </div>
+        
+        <div className="internal-data">
+          <h3>Internal Data</h3>
+          {fields.map(field => (
+            <div key={field} className="field-row">
+              <label>{formatFieldName(field)}</label>
+              <DifferenceHighlight
+                value={internalData[field]}
+                difference={organizedDifferences[field]}
+                side="internal"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
-// components/ResultsTable.jsx
-const ResultsTable = ({ results, onFilter, onSort, onExport }) => {
-  // Displays tabular results with sorting and filtering
-}
-
-// components/ExportButtons.jsx
-const ExportButtons = ({ data, onExport }) => {
-  // Handles CSV and PDF export functionality
-}
+export default ComparisonView;
 ```
 
-### Database Design (PostgreSQL)
+## Database Design
 
-#### Entity-Relationship Diagram
+### Entity Relationship Diagram
 
+```mermaid
+erDiagram
+    enterprises {
+        int id PK
+        varchar siret UK
+        varchar siren
+        varchar company_name
+        varchar legal_form
+        jsonb address
+        varchar activity_code
+        text activity_description
+        date creation_date
+        varchar status
+        int employee_count
+        varchar data_source
+        timestamp last_updated
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    internal_records {
+        int id PK
+        varchar siret UK
+        varchar siren
+        varchar company_name
+        varchar legal_form
+        jsonb address
+        varchar activity_code
+        text activity_description
+        date creation_date
+        varchar status
+        int employee_count
+        varchar data_source
+        timestamp last_updated
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    comparisons {
+        int id PK
+        int enterprise_id FK
+        int internal_record_id FK
+        timestamp comparison_date
+        jsonb differences_json
+        decimal similarity_score
+        varchar status
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    search_history {
+        int id PK
+        varchar search_term
+        varchar search_type
+        int results_count
+        varchar user_session
+        timestamp created_at
+    }
+    
+    batch_jobs {
+        int id PK
+        varchar job_id UK
+        varchar status
+        int total_items
+        int processed_items
+        int failed_items
+        jsonb configuration
+        timestamp started_at
+        timestamp completed_at
+        timestamp created_at
+    }
+    
+    enterprises ||--o{ comparisons : "has"
+    internal_records ||--o{ comparisons : "compared_with"
 ```
-┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
-│    enterprises      │     │    comparisons      │     │    internal_records │
-├─────────────────────┤     ├─────────────────────┤     ├─────────────────────┤
-│ id (PK)            │     │ id (PK)            │     │ id (PK)            │
-│ siret              │◄────┤ enterprise_id (FK) │     │ siret              │
-│ siren              │     │ internal_record_id │────►│ siren              │
-│ company_name       │     │ comparison_date    │     │ company_name       │
-│ legal_form         │     │ differences_json   │     │ legal_form         │
-│ address_json       │     │ similarity_score   │     │ address_json       │
-│ activity_code      │     │ status             │     │ activity_code      │
-│ activity_desc      │     │ created_at         │     │ activity_desc      │
-│ creation_date      │     │ updated_at         │     │ creation_date      │
-│ status             │     └─────────────────────┘     │ status             │
-│ employee_count     │                                 │ employee_count     │
-│ data_source        │                                 │ data_source        │
-│ last_updated       │                                 │ last_updated       │
-│ created_at         │                                 │ created_at         │
-│ updated_at         │                                 │ updated_at         │
-└─────────────────────┘                                 └─────────────────────┘
 
-┌─────────────────────┐
-│    search_history   │
-├─────────────────────┤
-│ id (PK)            │
-│ search_term        │
-│ search_type        │
-│ results_count      │
-│ user_session       │
-│ created_at         │
-└─────────────────────┘
-```
-
-#### Table Schemas
+### Database Schema
 
 ```sql
 -- External enterprise data from INSEE/SIRENE
@@ -189,7 +641,7 @@ CREATE TABLE enterprises (
     siren VARCHAR(9) NOT NULL,
     company_name VARCHAR(255) NOT NULL,
     legal_form VARCHAR(100),
-    address_json JSONB,
+    address JSONB,
     activity_code VARCHAR(10),
     activity_description TEXT,
     creation_date DATE,
@@ -201,6 +653,14 @@ CREATE TABLE enterprises (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Performance indexes
+CREATE INDEX idx_enterprises_siret ON enterprises(siret);
+CREATE INDEX idx_enterprises_siren ON enterprises(siren);
+CREATE INDEX idx_enterprises_company_name ON enterprises USING gin(to_tsvector('french', company_name));
+CREATE INDEX idx_enterprises_status ON enterprises(status);
+CREATE INDEX idx_enterprises_created_at ON enterprises(created_at);
+CREATE INDEX idx_enterprises_address ON enterprises USING gin(address);
+
 -- Internal system records for comparison
 CREATE TABLE internal_records (
     id SERIAL PRIMARY KEY,
@@ -208,7 +668,7 @@ CREATE TABLE internal_records (
     siren VARCHAR(9),
     company_name VARCHAR(255),
     legal_form VARCHAR(100),
-    address_json JSONB,
+    address JSONB,
     activity_code VARCHAR(10),
     activity_description TEXT,
     creation_date DATE,
@@ -220,18 +680,28 @@ CREATE TABLE internal_records (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Similar indexes for internal records
+CREATE INDEX idx_internal_records_siret ON internal_records(siret);
+CREATE INDEX idx_internal_records_siren ON internal_records(siren);
+CREATE INDEX idx_internal_records_company_name ON internal_records USING gin(to_tstvector('french', company_name));
+
 -- Comparison results and analysis
 CREATE TABLE comparisons (
     id SERIAL PRIMARY KEY,
-    enterprise_id INTEGER REFERENCES enterprises(id),
-    internal_record_id INTEGER REFERENCES internal_records(id),
+    enterprise_id INTEGER REFERENCES enterprises(id) ON DELETE CASCADE,
+    internal_record_id INTEGER REFERENCES internal_records(id) ON DELETE CASCADE,
     comparison_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     differences_json JSONB,
     similarity_score DECIMAL(5,2),
-    status VARCHAR(20) DEFAULT 'PENDING',
+    status VARCHAR(20) DEFAULT 'COMPLETED',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_comparisons_enterprise_id ON comparisons(enterprise_id);
+CREATE INDEX idx_comparisons_internal_record_id ON comparisons(internal_record_id);
+CREATE INDEX idx_comparisons_similarity_score ON comparisons(similarity_score);
+CREATE INDEX idx_comparisons_created_at ON comparisons(created_at);
 
 -- Search history for analytics
 CREATE TABLE search_history (
@@ -242,95 +712,52 @@ CREATE TABLE search_history (
     user_session VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_search_history_session ON search_history(user_session);
+CREATE INDEX idx_search_history_created_at ON search_history(created_at);
+
+-- Batch processing jobs
+CREATE TABLE batch_jobs (
+    id SERIAL PRIMARY KEY,
+    job_id VARCHAR(255) UNIQUE NOT NULL,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    total_items INTEGER,
+    processed_items INTEGER DEFAULT 0,
+    failed_items INTEGER DEFAULT 0,
+    configuration JSONB,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_batch_jobs_job_id ON batch_jobs(job_id);
+CREATE INDEX idx_batch_jobs_status ON batch_jobs(status);
+CREATE INDEX idx_batch_jobs_created_at ON batch_jobs(created_at);
 ```
 
----
-
-## 3. High-Level Sequence Diagrams
-
-### Sequence 1: Enterprise Data Search and Retrieval
-
-```
-User → Frontend → Backend → INSEE API → Database
-  │        │         │          │          │
-  ├─1─────►│         │          │          │ Search request (SIRET)
-  │        ├─2──────►│          │          │ API call (/api/search)
-  │        │         ├─3───────►│          │ Query INSEE API
-  │        │         │◄─4───────┤          │ Enterprise data response
-  │        │         ├─5──────────────────►│ Store/update enterprise data
-  │        │         │◄─6──────────────────┤ Confirm storage
-  │        │◄─7──────┤          │          │ Formatted response
-  │◄─8─────┤         │          │          │ Display results
-```
-
-### Sequence 2: Data Comparison Process
-
-```
-User → Frontend → Backend → Database → Comparison Engine
-  │        │         │          │              │
-  ├─1─────►│         │          │              │ Compare request
-  │        ├─2──────►│          │              │ API call (/api/compare)
-  │        │         ├─3──────►│              │ Fetch external data
-  │        │         │◄─4──────┤              │ External enterprise data
-  │        │         ├─5──────►│              │ Fetch internal data
-  │        │         │◄─6──────┤              │ Internal enterprise data
-  │        │         ├─7──────────────────────►│ Compare datasets
-  │        │         │◄─8──────────────────────┤ Comparison results
-  │        │         ├─9──────►│              │ Store comparison
-  │        │         │◄─10─────┤              │ Confirm storage
-  │        │◄─11─────┤          │              │ Return results
-  │◄─12────┤         │          │              │ Display comparison
-```
-
-### Sequence 3: Report Generation and Export
-
-```
-User → Frontend → Backend → Comparison Engine → Report Generator
-  │        │         │              │                │
-  ├─1─────►│         │              │                │ Export request (CSV/PDF)
-  │        ├─2──────►│              │                │ API call (/api/export)
-  │        │         ├─3────────────►│                │ Get comparison data
-  │        │         │◄─4────────────┤                │ Comparison data
-  │        │         ├─5──────────────────────────────►│ Generate report
-  │        │         │◄─6──────────────────────────────┤ Report file (bytes)
-  │        │◄─7──────┤              │                │ File download response
-  │◄─8─────┤         │              │                │ Download file
-```
-
----
-
-## 4. API Specifications
+## API Specifications
 
 ### External APIs
 
-#### INSEE Sirene API
-- **Purpose**: Official French enterprise registry data
+#### INSEE SIRENE API
 - **Base URL**: `https://api.insee.fr/entreprises/sirene/v3/`
 - **Authentication**: Bearer token required
+- **Rate Limits**: 30 requests/minute (free tier)
 - **Key Endpoints**:
   - `GET /siret/{siret}` - Get enterprise by SIRET
   - `GET /siren/{siren}` - Get enterprise by SIREN
-- **Rate Limits**: 30 requests/minute for free tier
-- **Data Format**: JSON with nested objects for address and activity
 
-#### Backup Data Sources
-- **data.gouv.fr SIRENE**: Fallback option if INSEE API is unavailable
-- **Base URL**: `https://entreprise.data.gouv.fr/api/sirene/v3/`
+#### Fallback API
+- **data.gouv.fr SIRENE**: `https://entreprise.data.gouv.fr/api/sirene/v3/`
 
 ### Internal API Endpoints
 
-#### Authentication
-```
-POST /api/auth/login
-Input: { "username": "string", "password": "string" }
-Output: { "token": "string", "expires_in": 3600 }
-```
-
 #### Enterprise Search
-```
+```http
 GET /api/enterprises/search?q={identifier}&type={siret|siren}
-Input: Query parameters
-Output: {
+
+Response:
+{
   "success": true,
   "data": {
     "siret": "12345678901234",
@@ -353,13 +780,17 @@ Output: {
 ```
 
 #### Data Comparison
-```
+```http
 POST /api/comparisons/create
-Input: {
+Content-Type: application/json
+
+{
   "external_id": 123,
   "internal_id": 456
 }
-Output: {
+
+Response:
+{
   "success": true,
   "comparison_id": 789,
   "differences": [
@@ -367,31 +798,27 @@ Output: {
       "field": "company_name",
       "external_value": "ABC Corp",
       "internal_value": "ABC Corporation",
-      "severity": "minor"
+      "severity": "minor",
+      "similarity": 0.85
     }
   ],
   "similarity_score": 85.5
 }
 ```
 
-#### Export Reports
-```
-GET /api/exports/{comparison_id}?format={csv|pdf}
-Input: Path parameter and query parameter
-Output: Binary file download with appropriate headers
-Content-Type: application/csv or application/pdf
-Content-Disposition: attachment; filename="comparison_report.csv"
-```
-
 #### Batch Processing
-```
+```http
 POST /api/batch/process
-Input: {
+Content-Type: application/json
+
+{
   "identifiers": ["12345678901234", "98765432109876"],
   "type": "siret",
   "compare_with_internal": true
 }
-Output: {
+
+Response:
+{
   "success": true,
   "batch_id": "batch_123",
   "status": "processing",
@@ -400,223 +827,180 @@ Output: {
 }
 ```
 
----
+#### Export Reports
+```http
+GET /api/exports/{comparison_id}?format={csv|pdf}
 
-## 5. SCM and QA Strategies
-
-### Source Control Management (SCM)
-
-#### Git Branching Strategy
-- **Main Branch**: Production-ready code, protected with required reviews
-- **Development Branch**: Integration branch for features
-- **Feature Branches**: Individual features (`feature/user-search`, `feature/export-pdf`)
-- **Hotfix Branches**: Critical production fixes (`hotfix/api-timeout-fix`)
-
-#### Workflow Process
-1. Create feature branch from development
-2. Implement feature with regular commits
-3. Write/update tests for new functionality
-4. Create pull request to development branch
-5. Code review by team member (mandatory)
-6. Automated testing pipeline runs
-7. Merge after approval and successful tests
-8. Regular merges from development to main for releases
-
-#### Commit Convention
-```
-type(scope): description
-
-Examples:
-feat(search): add SIRET validation
-fix(api): handle INSEE API timeout errors
-docs(readme): update installation instructions
-test(comparison): add unit tests for similarity scoring
+Response Headers:
+Content-Type: application/csv | application/pdf
+Content-Disposition: attachment; filename="comparison_report.csv"
 ```
 
-### Quality Assurance (QA)
+## Sequence Diagrams
 
-#### Testing Strategy
+### Enterprise Data Search and Retrieval
 
-**Unit Testing (Backend)**
-- **Tool**: pytest
-- **Coverage**: Minimum 80% code coverage
-- **Focus Areas**:
-  - Data aggregation logic
-  - Comparison algorithms
-  - API client error handling
-  - Database operations
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant A as INSEE API
+    participant D as Database
+    
+    U->>F: Search request (SIRET)
+    F->>B: API call (/api/search)
+    B->>A: Query INSEE API
+    A->>B: Enterprise data response
+    B->>D: Store/update enterprise data
+    D->>B: Confirm storage
+    B->>F: Formatted response
+    F->>U: Display results
+```
+
+### Data Comparison Process
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant D as Database
+    participant C as Comparison Engine
+    
+    U->>F: Compare request
+    F->>B: API call (/api/compare)
+    B->>D: Fetch external data
+    D->>B: External enterprise data
+    B->>D: Fetch internal data
+    D->>B: Internal enterprise data
+    B->>C: Compare datasets
+    C->>B: Comparison results
+    B->>D: Store comparison
+    D->>B: Confirm storage
+    B->>F: Return results
+    F->>U: Display comparison
+```
+
+### Batch Processing Workflow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant Q as Queue
+    participant W as Worker
+    participant A as API
+    
+    U->>F: Upload CSV file
+    F->>B: Batch process request
+    B->>Q: Queue batch job
+    Q->>W: Process batch items
+    loop For each identifier
+        W->>A: Fetch enterprise data
+        A->>W: Enterprise data
+    end
+    W->>B: Update job status
+    B->>F: Job completion notification
+    F->>U: Display results
+```
+
+## Implementation Plan
+
+### Phase 1: Core Infrastructure (Week 1-2)
+- [x] Project setup and CI/CD pipeline
+- [x] Database schema and migrations
+- [x] Basic Flask API structure
+- [x] React application setup
+- [ ] Docker containerization
+
+### Phase 2: Data Integration (Week 3-4)
+- [ ] INSEE API client implementation
+- [ ] Data models and validation
+- [ ] Caching layer with Redis
+- [ ] Error handling and fallbacks
+
+### Phase 3: Core Features (Week 5-6)
+- [ ] Enterprise search functionality
+- [ ] Data comparison engine
+- [ ] Frontend search interface
+- [ ] Comparison visualization
+
+### Phase 4: Advanced Features (Week 7-8)
+- [ ] Batch processing system
+- [ ] Export functionality (CSV/PDF)
+- [ ] Search history and analytics
+- [ ] Performance optimizations
+
+### Phase 5: Polish & Deploy (Week 9-10)
+- [ ] End-to-end testing
+- [ ] Performance tuning
+- [ ] Security hardening
+- [ ] Documentation completion
+- [ ] Production deployment
+
+## Development Guidelines
+
+### Git Workflow
+
+```bash
+# Feature development workflow
+git checkout -b feature/enterprise-search
+git add .
+git commit -m "feat(search): implement SIRET validation"
+git push origin feature/enterprise-search
+
+# Pull request process
+1. Create PR from feature branch to develop
+2. Code review required
+3. All tests must pass
+4. Merge to develop after approval
+```
+
+### Code Quality Standards
+
+#### Python (Backend)
+- **Style**: PEP 8 with Black formatter
+- **Testing**: pytest with minimum 80% coverage
+- **Linting**: flake8, mypy for type checking
+- **Documentation**: Docstrings for all public methods
+
+#### JavaScript (Frontend)
+- **Style**: ESLint with Airbnb config
+- **Testing**: Jest + React Testing Library
+- **Formatting**: Prettier
+- **Documentation**: JSDoc for complex functions
+
+### Testing Strategy
 
 ```python
 # Example unit test
 def test_enterprise_comparison():
+    """Test enterprise comparison logic."""
     external_data = Enterprise(company_name="ABC Corp")
     internal_data = Enterprise(company_name="ABC Corporation")
     
-    comparison = ComparisonEngine().compare_enterprises(external_data, internal_data)
+    comparison = ComparisonEngine().compare_enterprises(
+        external_data, internal_data
+    )
     
     assert comparison.similarity_score > 80
     assert len(comparison.differences) == 1
     assert comparison.differences[0].field == "company_name"
 ```
 
-**Integration Testing**
-- **Tool**: pytest with database fixtures
-- **Focus Areas**:
-  - API endpoint responses
-  - Database transactions
-  - External API integration
+### Performance Guidelines
 
-**Frontend Testing**
-- **Tool**: Jest + React Testing Library
-- **Focus Areas**:
-  - Component rendering
-  - User interactions
-  - Data display accuracy
+- **Database**: Use appropriate indexes, avoid N+1 queries
+- **API**: Implement rate limiting and caching
+- **Frontend**: Use React.memo, useMemo for expensive calculations
+- **Monitoring**: Track response times, error rates, and resource usage
 
-**End-to-End Testing**
-- **Tool**: Cypress
-- **Critical User Flows**:
-  - Complete search and comparison workflow
-  - Export functionality
-  - Error handling scenarios
+## Security Considerations
 
-#### Continuous Integration Pipeline
-
-```yaml
-# .gitlab-ci.yml
-stages:
-  - test
-  - build
-  - deploy
-
-test_backend:
-  stage: test
-  script:
-    - pip install -r requirements.txt
-    - pytest --cov=app tests/
-    - flake8 app/
-
-test_frontend:
-  stage: test
-  script:
-    - npm install
-    - npm run test:coverage
-    - npm run lint
-
-build_docker:
-  stage: build
-  script:
-    - docker build -t data-platform:$CI_COMMIT_SHA .
-    - docker push registry/data-platform:$CI_COMMIT_SHA
-
-deploy_staging:
-  stage: deploy
-  script:
-    - docker-compose up -d
-  only:
-    - development
-```
-
-#### Quality Gates
-- All tests must pass before merge
-- Code coverage must be ≥80%
-- No critical security vulnerabilities (using safety, bandit)
-- Performance benchmarks for API response times (<2s)
-- Manual testing for critical user paths
-
----
-
-## 6. Technical Justifications
-
-### Technology Stack Rationale
-
-#### Backend: Python with Flask
-**Justification**: 
-- Pandas for efficient data manipulation and comparison
-- Rich ecosystem of libraries for data processing
-- Flask provides lightweight, flexible API framework
-- Team expertise in Python reduces learning curve
-- Strong integration capabilities with PostgreSQL
-
-#### Frontend: React.js
-**Justification**:
-- Component-based architecture suits the comparison interface
-- Large ecosystem for data visualization (charts, tables)
-- Team member (Maxime) has React experience
-- Excellent performance for dynamic data updates
-- Strong community support and documentation
-
-#### Database: PostgreSQL
-**Justification**:
-- JSONB support for flexible data storage (addresses, metadata)
-- ACID compliance for data integrity
-- Excellent performance for complex queries and joins
-- Built-in full-text search capabilities
-- Strong compatibility with Python/SQLAlchemy
-
-#### Containerization: Docker
-**Justification**:
-- Ensures consistent development and deployment environments
-- Simplifies dependency management
-- Enables easy scaling and deployment strategies
-- Supports microservices architecture if needed in future
-
-### Architecture Decisions
-
-#### API-First Design
-**Justification**: Separates concerns between frontend and backend, enables future integrations, supports mobile development if needed.
-
-#### Batch Processing Support
-**Justification**: Addresses real-world need for validating large datasets efficiently, prevents API rate limiting issues.
-
-#### Flexible Data Storage
-**Justification**: JSONB fields accommodate varying data structures from different sources, future-proofs against API changes.
-
-#### Caching Strategy
-**Justification**: Reduces external API calls, improves response times, provides fallback during API outages.
-
-### Security Considerations
-- API key management through environment variables
-- Input validation and sanitization
-- Rate limiting to prevent abuse
-- Secure session management
-- Regular security dependency updates
-
-### Performance Optimizations
-- Database indexing on frequently queried fields (SIRET, SIREN)
-- Async processing for batch operations
-- Response caching for repeated queries
-- Pagination for large result sets
-- Lazy loading for frontend components
-
----
-
-## 7. Implementation Timeline
-
-### Sprint Breakdown (Weeks 5-8)
-
-**Week 5: Core Backend Development**
-- Set up project structure and CI/CD pipeline
-- Implement INSEE API client with error handling
-- Create database models and migrations
-- Basic CRUD operations for enterprises
-
-**Week 6: Data Processing and Comparison**
-- Implement data aggregation service
-- Build comparison engine with similarity scoring
-- Create batch processing capabilities
-- Unit tests for core business logic
-
-**Week 7: Frontend Development**
-- Set up React application structure
-- Implement search interface and results display
-- Create comparison view with difference highlighting
-- Integrate with backend APIs
-
-**Week 8: Integration and Export Features**
-- Complete API integration between frontend and backend
-- Implement CSV and PDF export functionality
-- End-to-end testing
-- Performance optimization and bug fixes
-
-This technical documentation provides a comprehensive blueprint for developing the Enterprise Data Aggregation & Comparison Platform MVP, ensuring all team members have clear guidance for implementation while maintaining flexibility for iterative improvements.
+- 🔐 **API Security**: Rate limiting, input validation, CORS configuration
+- 🔑 **Authentication**: JWT tokens with proper expiration
+- 🛡️ **Data Protection**: Encrypt sensitive data at rest
+- 🔍 **Audit Trail**: Log all data access and modifications
+- 🚨 **Error Handling**: Don't
