@@ -1,8 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+// lib/prisma.js - Fixed CommonJS version
+const { PrismaClient } = require('@prisma/client');
 
 const globalForPrisma = globalThis;
 
-export const prisma = globalForPrisma.prisma || new PrismaClient({
+const prisma = globalForPrisma.prisma || new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
@@ -22,3 +23,5 @@ async function testConnection() {
 
 // Test connection on import
 testConnection();
+
+module.exports = { prisma };

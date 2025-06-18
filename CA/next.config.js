@@ -1,4 +1,3 @@
-// next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -10,6 +9,9 @@ const nextConfig = {
     FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
     INSEE_API_TOKEN: process.env.INSEE_API_TOKEN,
     INPI_API_TOKEN: process.env.INPI_API_TOKEN,
+    // Add these for INSEE OAuth
+    INSEE_CONSUMER_KEY: process.env.INSEE_CONSUMER_KEY,
+    INSEE_CONSUMER_SECRET: process.env.INSEE_CONSUMER_SECRET,
   },
   async headers() {
     return [
@@ -25,4 +27,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = nextConfig;
