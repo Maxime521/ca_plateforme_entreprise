@@ -1,0 +1,51 @@
+{
+  "name": "enterprise-data-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "test-apis": "node scripts/test-apis.js",
+    "verify-apis": "node scripts/verify-apis.js",
+    "db:reset": "prisma migrate reset --force && prisma db push"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.3.0",
+    "@prisma/client": "^5.7.0",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "@tanstack/react-query": "^5.8.0",
+    "autoprefixer": "^10.4.16",
+    "axios": "^1.10.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "date-fns": "^2.30.0",
+    "dotenv": "^16.5.0",
+    "firebase": "^10.7.0",
+    "firebase-admin": "^12.0.0",
+    "lucide-react": "^0.294.0",
+    "next": "14.2.30",
+    "postcss": "^8.4.32",
+    "prisma": "^5.7.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-hook-form": "^7.48.0",
+    "recharts": "^2.8.0",
+    "tailwind-merge": "^2.0.0",
+    "tailwindcss": "^3.3.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.0",
+    "typescript": "^5"
+  }
+}

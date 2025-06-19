@@ -1,0 +1,419 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* CSS Variables for Theme System */
+:root {
+  --color-primary-50: #f0fdfa;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-900: #0f172a;
+  
+  --color-success-50: #f0fdf4;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  
+  --color-error-50: #fef2f2;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-financial: 0 10px 15px -3px rgba(20, 184, 166, 0.1), 0 4px 6px -2px rgba(20, 184, 166, 0.05);
+}
+
+.dark {
+  --color-gray-50: #1e293b;
+  --color-gray-100: #334155;
+  --color-gray-900: #f8fafc;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100;
+  @apply transition-colors duration-200;
+  font-feature-settings: 'cv11', 'ss01';
+  font-variation-settings: 'opsz' 32;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-semibold;
+  letter-spacing: -0.025em;
+}
+
+/* Links */
+a {
+  color: inherit;
+  text-decoration: none;
+  @apply transition-colors duration-200;
+}
+
+a:hover {
+  @apply text-primary-600 dark:text-primary-400;
+}
+
+/* Form Elements */
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  @apply w-full px-4 py-3;
+  @apply border border-gray-300 dark:border-slate-600 rounded-xl;
+  @apply focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  @apply bg-white dark:bg-slate-800;
+  @apply text-gray-900 dark:text-gray-100;
+  @apply placeholder-gray-500 dark:placeholder-gray-400;
+  @apply transition-all duration-200;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  @apply ring-4 ring-primary-500/20;
+  @apply shadow-lg;
+}
+
+/* Buttons */
+.btn {
+  @apply inline-flex items-center justify-center;
+  @apply px-6 py-3 rounded-xl;
+  @apply font-medium text-sm;
+  @apply transition-all duration-200;
+  @apply focus:outline-none focus:ring-4;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-primary-500 to-primary-600;
+  @apply hover:from-primary-600 hover:to-primary-700;
+  @apply text-white shadow-lg;
+  @apply focus:ring-primary-500/20;
+  @apply hover:scale-105 disabled:hover:scale-100;
+}
+
+.btn-secondary {
+  @apply bg-white dark:bg-slate-800;
+  @apply border border-gray-300 dark:border-slate-600;
+  @apply text-gray-700 dark:text-gray-300;
+  @apply hover:bg-gray-50 dark:hover:bg-slate-700;
+  @apply focus:ring-gray-500/20;
+}
+
+.btn-ghost {
+  @apply bg-transparent;
+  @apply text-gray-600 dark:text-gray-400;
+  @apply hover:bg-gray-100 dark:hover:bg-slate-800;
+  @apply hover:text-gray-900 dark:hover:text-gray-100;
+}
+
+/* Cards */
+.card {
+  @apply bg-white/80 dark:bg-slate-800/80;
+  @apply backdrop-blur-xl;
+  @apply border border-gray-200/50 dark:border-slate-700/50;
+  @apply rounded-2xl shadow-card;
+  @apply transition-all duration-300;
+}
+
+.card:hover {
+  @apply shadow-card-hover;
+  @apply -translate-y-1;
+}
+
+.card-financial {
+  @apply shadow-financial;
+  @apply border-primary-200/50 dark:border-primary-800/50;
+}
+
+/* Badge Components */
+.badge {
+  @apply inline-flex items-center px-3 py-1;
+  @apply rounded-full text-xs font-medium;
+  @apply border;
+}
+
+.badge-success {
+  @apply bg-green-50 text-green-700 border-green-200;
+  @apply dark:bg-green-900/30 dark:text-green-400 dark:border-green-800;
+}
+
+.badge-error {
+  @apply bg-error-50 text-error-700 border-error-200;
+  @apply dark:bg-error-900/30 dark:text-error-400 dark:border-error-800;
+}
+
+.badge-warning {
+  @apply bg-orange-50 text-orange-700 border-orange-200;
+  @apply dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800;
+}
+
+.badge-info {
+  @apply bg-blue-50 text-blue-700 border-blue-200;
+  @apply dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800;
+}
+
+/* Status Indicators */
+.status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-dot-active {
+  @apply bg-success-500;
+  @apply shadow-lg shadow-success-500/25;
+}
+
+.status-dot-inactive {
+  @apply bg-error-500;
+  @apply shadow-lg shadow-error-500/25;
+}
+
+.status-dot-pending {
+  @apply bg-orange-500;
+  @apply shadow-lg shadow-orange-500/25;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-slate-800;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 dark:bg-slate-600;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500 dark:bg-slate-500;
+}
+
+/* Custom Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(20, 184, 166, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(20, 184, 166, 0.5);
+  }
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+.animate-bounce-subtle {
+  animation: bounceSubtle 2s infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(30, 41, 59, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(71, 85, 105, 0.2);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-secondary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Loading Skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+.dark .skeleton {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Focus Visible */
+.focus-visible:focus-visible {
+  @apply outline-none ring-4 ring-primary-500/20;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    @apply bg-white text-black;
+  }
+  
+  .card {
+    @apply bg-white border border-gray-300;
+    box-shadow: none;
+  }
+}
+
+/* Utility Classes */
+.text-balance {
+  text-wrap: balance;
+}
+
+.transition-base {
+  @apply transition-all duration-200;
+}
+
+.transition-slow {
+  @apply transition-all duration-500;
+}
+
+/* Financial specific styles */
+.financial-highlight {
+  @apply bg-gradient-to-r from-primary-50 to-blue-50;
+  @apply dark:from-primary-900/20 dark:to-blue-900/20;
+  @apply border border-primary-200 dark:border-primary-800;
+  @apply rounded-xl p-4;
+}
+
+.metric-card {
+  @apply bg-white dark:bg-slate-800;
+  @apply border border-gray-200 dark:border-slate-700;
+  @apply rounded-xl p-6;
+  @apply hover:shadow-lg transition-shadow duration-300;
+}
+
+.metric-value {
+  @apply text-3xl font-bold text-gray-900 dark:text-white;
+  @apply gradient-text;
+}
+
+.metric-label {
+  @apply text-sm font-medium text-gray-600 dark:text-gray-400;
+  @apply uppercase tracking-wide;
+}
+
+/* Responsive Design Helpers */
+@media (max-width: 640px) {
+  .mobile-full {
+    @apply w-full;
+  }
+  
+  .mobile-hide {
+    @apply hidden;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card {
+    @apply border-2 border-gray-900 dark:border-gray-100;
+  }
+  
+  .btn-primary {
+    @apply border-2 border-gray-900;
+  }
+}

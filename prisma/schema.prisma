@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id                    String   @id @default(cuid())
+  siren                 String   @unique
+  denomination          String
+  dateCreation          DateTime?
+  dateImmatriculation   DateTime?
+  active                Boolean  @default(true)
+  adresseSiege          String?
+  natureEntreprise      String?
+  formeJuridique        String?
+  codeAPE               String?
+  libelleAPE            String?
+  capitalSocial         Float?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  documents             Document[]
+  financialRatios       FinancialRatio[]
+  
+  @@map("companies")
+}
+
+model Document {
+  id                String   @id @default(cuid())
+  companyId         String
+  datePublication   DateTime
+  typeDocument      String
+  source            String
+  typeAvis          String?
+  reference         String?
+  description       String?
+  contenu           String?
+  lienDocument      String?
+  createdAt         DateTime @default(now())
+  
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("documents")
+}
+
+model FinancialRatio {
+  id                String   @id @default(cuid())
+  companyId         String
+  year              Int
+  ratioType         String
+  value             Float
+  createdAt         DateTime @default(now())
+  
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("financial_ratios")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  uid               String   @unique  // Firebase UID
+  email             String   @unique
+  displayName       String?
+  photoURL          String?  // Added this field
+  role              String   @default("user")
+  lastLoginAt       DateTime? // Added this field
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("users")
+}
