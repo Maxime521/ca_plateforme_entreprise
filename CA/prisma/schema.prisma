@@ -1,3 +1,4 @@
+// prisma/schema.prisma - Enhanced User Model
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,6 +8,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                String   @id @default(cuid())
+  uid               String   @unique  // Firebase UID
+  email             String   @unique
+  displayName       String?
+  photoURL          String?
+  role              String   @default("user")  // "admin" or "user"
+  permissions       String?  @default("{}")   // JSON string for granular permissions
+  lastLoginAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Role-specific settings
+  searchPreferences String?  @default("{}")   // JSON for user search preferences
+  allowedFeatures   String?  @default("[]")   // JSON array of allowed features
+  
+  @@map("users")
+}
+
+// Other existing models remain the same...
 model Company {
   id                    String   @id @default(cuid())
   siren                 String   @unique
@@ -58,18 +79,4 @@ model FinancialRatio {
   company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   
   @@map("financial_ratios")
-}
-
-model User {
-  id                String   @id @default(cuid())
-  uid               String   @unique  // Firebase UID
-  email             String   @unique
-  displayName       String?
-  photoURL          String?  // Added this field
-  role              String   @default("user")
-  lastLoginAt       DateTime? // Added this field
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  @@map("users")
 }
