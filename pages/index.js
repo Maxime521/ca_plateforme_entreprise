@@ -1,9 +1,13 @@
-// pages/index.js - Modern Financial Services Landing Page
+// pages/index.js - FIXED VERSION with Working Company Details
+//==============================================================================
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import SearchForm from '../components/SearchForm';
 import CompanyCard from '../components/CompanyCard';
+import CompanyPDFSection from '../components/CompanyPDFSection';
 import { useAuth } from '../hooks/useAuth';
 import axios from 'axios';
 
@@ -11,6 +15,7 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const router = useRouter();
 
   // Search companies using the new combined API
   const { data: searchResults, isLoading: searchLoading, error } = useQuery({
@@ -40,6 +45,13 @@ export default function Home() {
 
   const handleCompanySelect = (company) => {
     setSelectedCompany(company);
+  };
+
+  // FIXED: Navigate to company details page
+  const handleViewFullDetails = (company) => {
+    if (company.siren) {
+      router.push(`/company/${company.siren}`);
+    }
   };
 
   if (authLoading) {
@@ -217,15 +229,217 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Selected Company Details */}
+        {/* FIXED: Selected Company Details Modal */}
         {selectedCompany && (
-          <CompanyDetails 
+          <CompanyDetailsModal 
             company={selectedCompany} 
             onClose={() => setSelectedCompany(null)}
+            onViewFullDetails={handleViewFullDetails}
           />
         )}
       </div>
     </Layout>
+  );
+}
+
+// FIXED: Working Company Details Modal with PDF Support
+function CompanyDetailsModal({ company, onClose, onViewFullDetails }) {
+  const [activeTab, setActiveTab] = useState('overview');
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+
+        <div className="inline-block align-bottom bg-white dark:bg-dark-surface rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-dark-surface px-6 pt-6 pb-4 sm:p-8">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-6 sticky top-0 bg-white dark:bg-dark-surface z-10 pb-4 border-b border-gray-200 dark:border-dark-border">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {company.denomination || `Entreprise ${company.siren}`}
+                </h2>
+                <div className="flex items-center space-x-4 mt-2">
+                  <p className="text-primary-600 dark:text-primary-400 font-medium">
+                    SIREN: {company.siren}
+                  </p>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    company.active 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                  }`}>
+                    {company.active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="mb-6">
+              <nav className="flex space-x-1 bg-gray-100 dark:bg-dark-card p-1 rounded-xl">
+                {[
+                  { id: 'overview', name: 'Vue d\'ensemble', icon: '🏢' },
+                  { id: 'documents', name: 'Documents PDF', icon: '📄' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-1 flex items-center justify-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      activeTab === tab.id
+                        ? 'bg-white dark:bg-dark-surface text-primary-600 dark:text-primary-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-dark-surface/50'
+                    }`}
+                  >
+                    <span className="mr-2">{tab.icon}</span>
+                    {tab.name}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Tab Content */}
+            <div className="min-h-[400px]">
+              {activeTab === 'overview' && (
+                <CompanyOverviewContent company={company} />
+              )}
+
+              {activeTab === 'documents' && (
+                <div className="space-y-6">
+                  <CompanyPDFSection company={company} />
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="mt-8 flex justify-end space-x-3 sticky bottom-0 bg-white dark:bg-dark-surface pt-4 border-t border-gray-200 dark:border-dark-border">
+              <button
+                onClick={onClose}
+                className="px-6 py-3 border border-gray-300 dark:border-dark-border rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-card transition-colors"
+              >
+                Fermer
+              </button>
+              <button 
+                onClick={() => onViewFullDetails(company)}
+                className="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl text-sm font-medium text-white hover:from-primary-600 hover:to-primary-700 transition-all duration-200 hover:scale-105 shadow-lg"
+              >
+                Voir les détails complets
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Company Overview Content for Modal
+function CompanyOverviewContent({ company }) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      {/* Basic Information */}
+      <div className="space-y-6">
+        <div className="bg-gray-50 dark:bg-dark-card rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <span className="mr-2">ℹ️</span>
+            Informations générales
+          </h3>
+          
+          <div className="space-y-4">
+            <InfoItem label="Dénomination" value={company.denomination} />
+            <InfoItem label="SIREN" value={company.siren} />
+            <InfoItem label="Forme juridique" value={company.formeJuridique} />
+            <InfoItem label="Code APE" value={company.codeAPE} />
+            <InfoItem label="Date de création" value={company.dateCreation ? new Date(company.dateCreation).toLocaleDateString('fr-FR') : 'N/A'} />
+            <InfoItem label="Statut" value={company.active ? 'Active' : 'Inactive'} />
+          </div>
+        </div>
+      </div>
+
+      {/* Address and Additional Info */}
+      <div className="space-y-6">
+        {/* Address */}
+        {company.adresseSiege && (
+          <div className="bg-gray-50 dark:bg-dark-card rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <span className="mr-2">📍</span>
+              Adresse du siège social
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              {company.adresseSiege}
+            </p>
+          </div>
+        )}
+
+        {/* Quick Stats */}
+        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl p-6 text-white">
+          <h3 className="text-lg font-semibold mb-4 flex items-center">
+            <span className="mr-2">📊</span>
+            Aperçu rapide
+          </h3>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-primary-100">SIREN:</span>
+              <span className="font-mono font-medium">{company.siren}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-primary-100">Forme:</span>
+              <span className="font-medium">{company.formeJuridique || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-primary-100">Statut:</span>
+              <span className={`font-medium ${company.active ? 'text-green-200' : 'text-red-200'}`}>
+                {company.active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-primary-100">Source:</span>
+              <span className="font-medium uppercase">{company.source || 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* BODACC Information */}
+        {company.source === 'bodacc' && company.lastAnnouncement && (
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
+            <h3 className="text-lg font-semibold text-green-900 dark:text-green-300 mb-4 flex items-center">
+              <span className="mr-2">📰</span>
+              Dernière annonce BODACC
+            </h3>
+            <div className="space-y-2">
+              <InfoItem label="Type d'annonce" value={company.lastAnnouncement.type} />
+              <InfoItem label="Date de publication" value={new Date(company.lastAnnouncement.date).toLocaleDateString('fr-FR')} />
+              {company.lastAnnouncement.tribunal && (
+                <InfoItem label="Tribunal" value={company.lastAnnouncement.tribunal} />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Helper component for information items
+function InfoItem({ label, value }) {
+  return (
+    <div>
+      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+        {label}
+      </p>
+      <p className="text-sm text-gray-900 dark:text-white">
+        {value || 'Non renseigné'}
+      </p>
+    </div>
   );
 }
 
@@ -371,103 +585,6 @@ function FeatureShowcase() {
           <div>
             <div className="text-4xl lg:text-5xl font-bold mb-2">24/7</div>
             <div className="text-primary-100">Disponibilité</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Company Details Modal (simplified for now)
-function CompanyDetails({ company, onClose }) {
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
-
-        <div className="inline-block align-bottom bg-white dark:bg-dark-surface rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-          <div className="bg-white dark:bg-dark-surface px-6 pt-6 pb-4 sm:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {company.denomination}
-                </h2>
-                <p className="text-primary-600 dark:text-primary-400 font-medium">
-                  SIREN: {company.siren}
-                </p>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Informations générales
-                </h3>
-                <div className="space-y-3">
-                  {company.formeJuridique && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-300">Forme juridique:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{company.formeJuridique}</span>
-                    </div>
-                  )}
-                  {company.codeAPE && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-300">Code APE:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{company.codeAPE}</span>
-                    </div>
-                  )}
-                  {company.dateCreation && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-300">Date de création:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {new Date(company.dateCreation).toLocaleDateString('fr-FR')}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">Statut:</span>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      company.active 
-                        ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400'
-                        : 'bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-400'
-                    }`}>
-                      {company.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Localisation
-                </h3>
-                {company.adresseSiege && (
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {company.adresseSiege}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-8 flex justify-end space-x-3">
-              <button
-                onClick={onClose}
-                className="px-6 py-3 border border-gray-300 dark:border-dark-border rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-card transition-colors"
-              >
-                Fermer
-              </button>
-              <button className="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl text-sm font-medium text-white hover:from-primary-600 hover:to-primary-700 transition-all duration-200 hover:scale-105 shadow-lg">
-                Voir les détails complets
-              </button>
-            </div>
           </div>
         </div>
       </div>

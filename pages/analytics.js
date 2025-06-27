@@ -1,3 +1,5 @@
+// pages/analytics.js - UPDATED with Modern Export Button
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
@@ -9,7 +11,7 @@ export default function Analytics() {
   const [timeRange, setTimeRange] = useState('last12months');
   const [selectedMetric, setSelectedMetric] = useState('companies');
 
-  // Mock analytics data
+  // Mock analytics data (keeping existing data)
   const mockData = {
     summary: {
       totalCompanies: 1247,
@@ -66,6 +68,37 @@ export default function Analytics() {
     ]
   };
 
+  // Export function
+  const handleExportReport = async () => {
+    try {
+      // Show loading state
+      const button = document.getElementById('export-btn');
+      const originalContent = button.innerHTML;
+      button.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Génération...
+      `;
+      button.disabled = true;
+
+      // Simulate export process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Reset button
+      button.innerHTML = originalContent;
+      button.disabled = false;
+      
+      // Show success
+      alert('Rapport exporté avec succès !');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Erreur lors de l\'export');
+    }
+  };
+
+  // Existing StatCard component
   const StatCard = ({ title, value, subtitle, icon, trend, color = 'green' }) => {
     const colorClasses = {
       green: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30',
@@ -108,7 +141,7 @@ export default function Analytics() {
     <Layout>
       <div className="py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
+          {/* UPDATED Header with Modern Export Button */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
@@ -129,12 +162,43 @@ export default function Analytics() {
                 <option value="last12months">12 derniers mois</option>
                 <option value="lastyear">Année dernière</option>
               </select>
-              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-                📊 Exporter rapport
+              
+              {/* MODERN EXPORT BUTTON */}
+              <button
+                id="export-btn"
+                onClick={handleExportReport}
+                className="group relative inline-flex items-center justify-center px-6 py-2.5 overflow-hidden font-medium transition-all duration-300 ease-in-out bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 text-white rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-2 border border-blue-500/20"
+              >
+                {/* Background Animation */}
+                <span className="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-400/20 via-transparent to-blue-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                
+                {/* Icon */}
+                <svg 
+                  className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:scale-110" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                  />
+                </svg>
+                
+                {/* Text */}
+                <span className="relative z-10 text-sm font-semibold tracking-wide">
+                  Exporter Rapport
+                </span>
+                
+                {/* Shine Effect */}
+                <span className="absolute inset-0 -top-1 -left-1 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out"></span>
               </button>
             </div>
           </div>
 
+          {/* Rest of the analytics content remains the same */}
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
@@ -299,7 +363,7 @@ export default function Analytics() {
             </ResponsiveContainer>
           </div>
 
-          {/* Bottom Grid */}
+          {/* Bottom Grid - Sector Growth and API Usage */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Sector Growth */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">

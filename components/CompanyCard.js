@@ -1,4 +1,4 @@
-// components/CompanyCard.js - Modern Financial Company Card
+// components/CompanyCard.js - FIXED VERSION with Source and Status Badges Properly Aligned
 export default function CompanyCard({ company, onClick }) {
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -29,28 +29,21 @@ export default function CompanyCard({ company, onClick }) {
 
   const getSourceBadge = (source) => {
     const sourceConfig = {
-      local: { 
-        label: 'Local', 
-        icon: '💾', 
-        className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700' 
-      },
-      insee: { 
-        label: 'INSEE', 
-        icon: '🏛️', 
-        className: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800' 
-      },
-      bodacc: { 
-        label: 'BODACC', 
-        icon: '📰', 
-        className: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800' 
-      }
+      insee: { label: 'INSEE', color: 'blue' },
+      bodacc: { label: 'BODACC', color: 'green' },
+      local: { label: 'Local', color: 'gray' }
     };
 
-    const config = sourceConfig[source] || sourceConfig.local;
+    const config = sourceConfig[source] || { label: source?.toUpperCase() || 'UNKNOWN', color: 'gray' };
+    
+    const colorClasses = {
+      blue: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
+      green: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+      gray: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400 dark:border-gray-800'
+    };
 
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium border ${config.className}`}>
-        <span className="mr-1">{config.icon}</span>
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${colorClasses[config.color]}`}>
         {config.label}
       </span>
     );
@@ -59,29 +52,37 @@ export default function CompanyCard({ company, onClick }) {
   return (
     <div 
       onClick={() => onClick(company)}
-      className="group bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl rounded-2xl shadow-card hover:shadow-card-hover border border-gray-200/50 dark:border-dark-border/50 p-6 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02]"
+      className="group bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl rounded-2xl shadow-card hover:shadow-card-hover border border-gray-200/50 dark:border-dark-border/50 p-6 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] relative"
     >
-      {/* Header */}
+      {/* FIXED: Header with Source and Status Badges Properly Stacked */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center mb-2">
-            <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
-              <span className="text-white text-xl">🏢</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                {company.denomination || 'Entreprise sans nom'}
-              </h3>
-              <p className="text-sm text-primary-600 dark:text-primary-400 font-medium">
-                SIREN: {company.siren}
-              </p>
-            </div>
+        <div className="flex items-center flex-1 min-w-0">
+          <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+            <span className="text-white text-xl">🏢</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+              {company.denomination || 'Entreprise sans nom'}
+            </h3>
+            <p className="text-sm text-primary-600 dark:text-primary-400 font-medium">
+              SIREN: {company.siren}
+            </p>
           </div>
         </div>
         
-        <div className="flex flex-col items-end space-y-2 ml-4">
-          {getStatusBadge(company.active)}
-          {company.source && getSourceBadge(company.source)}
+        {/* FIXED: Right-aligned badges container with vertical layout and proper spacing */}
+        <div className="ml-4 flex-shrink-0 flex flex-col items-end space-y-3">
+          {/* Source badge on top */}
+          {company.source && (
+            <div>
+              {getSourceBadge(company.source)}
+            </div>
+          )}
+          
+          {/* Status badge below with professional spacing */}
+          <div>
+            {getStatusBadge(company.active)}
+          </div>
         </div>
       </div>
 
@@ -178,13 +179,12 @@ export default function CompanyCard({ company, onClick }) {
         </div>
       )}
 
-      {/* Action Button */}
+      {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-dark-border">
         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
           {company.siret && (
             <span className="mr-4">SIRET: {company.siret}</span>
           )}
-          <span>Cliquer pour plus de détails</span>
         </div>
         
         <button className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-all duration-200 hover:scale-105 shadow-lg opacity-0 group-hover:opacity-100">

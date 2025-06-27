@@ -1,3 +1,4 @@
+// File: next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -23,8 +24,26 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
         ],
       },
+      {
+        source: '/uploads/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
     ];
   },
-}
+
+  async rewrites() {
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: '/api/serve-file/:path*',
+      },
+    ];
+  },
+};
 
 module.exports = nextConfig;

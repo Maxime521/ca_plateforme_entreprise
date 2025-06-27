@@ -1,3 +1,7 @@
+//==============================================================================
+// hooks/useAuth.js - FIXED VERSION with proper imports
+//==============================================================================
+
 import { useState, useEffect, useContext, createContext } from 'react';
 import { 
   onAuthStateChanged, 
@@ -8,6 +12,8 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+// ✅ FIXED: Import the functions we need
+import { canAccessFeature, hasPermission, ROLES } from '../utils/rolePermissions';
 
 const AuthContext = createContext();
 
@@ -15,35 +21,37 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userRole, setUserRole] = useState('user'); // Track user role
+  const [permissions, setPermissions] = useState({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          // User is signed in
           console.log('🔥 User signed in:', firebaseUser.email);
           
-          // Sync user with our database (don't wait for it)
-          syncUserWithDatabase(firebaseUser).catch(error => {
-            console.warn('Database sync failed:', error.message);
-          });
+          // Sync user with database and get role
+          const userData = await syncUserWithDatabase(firebaseUser);
           
           setUser(firebaseUser);
+          setUserRole(userData?.role || 'user');
+          setPermissions(userData?.permissions || {});
         } else {
-          // User is signed out
           console.log('👋 User signed out');
           setUser(null);
+          setUserRole('user');
+          setPermissions({});
         }
       } catch (error) {
         console.error('Auth state change error:', error);
         setUser(null);
+        setUserRole('user');
+        setPermissions({});
       } finally {
-        // Always set loading to false
         setLoading(false);
       }
     });
 
-    // Set a timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
       console.log('⏰ Auth timeout - setting loading to false');
       setLoading(false);
@@ -74,17 +82,25 @@ export function AuthProvider({ children }) {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.warn('Database sync failed:', errorData.message || 'Unknown error');
-        // Don't throw - let user continue even if DB sync fails
-        return;
+        return null;
       }
 
       const data = await response.json();
-      console.log('✅ User synced with database:', data.user?.email);
+      console.log('✅ User synced with database:', data.user?.email, 'Role:', data.user?.role);
+      return data.user;
     } catch (error) {
       console.warn('Database sync error (continuing anyway):', error.message);
-      // Don't throw - let user continue even if DB sync fails
+      return null;
     }
   };
+
+  // ✅ FIXED: Role checking utilities using imported functions
+  const isAdmin = () => userRole === ROLES.ADMIN;
+  const isUser = () => userRole === ROLES.USER;
+  const hasUserPermission = (permission) => hasPermission(userRole, permission);
+  
+  // ✅ FIXED: Feature access control using imported function
+  const canUserAccessFeature = (feature) => canAccessFeature(userRole, feature);
 
   const login = async (email, password) => {
     try {
@@ -106,7 +122,6 @@ export function AuthProvider({ children }) {
       setLoading(true);
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Update profile with display name
       if (displayName) {
         await updateProfile(result.user, { displayName });
       }
@@ -167,6 +182,12 @@ export function AuthProvider({ children }) {
     user,
     loading,
     error,
+    userRole,
+    permissions,
+    isAdmin,
+    isUser,
+    hasPermission: hasUserPermission, // Renamed to avoid confusion
+    canAccessFeature: canUserAccessFeature, // Renamed to avoid confusion
     login,
     register,
     logout,

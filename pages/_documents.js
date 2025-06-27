@@ -1,3 +1,5 @@
+//pages/_document.js
+// This file is used to customize the HTML document structure in a Next.js
 import { Html, Head, Main, NextScript } from 'next/document';
 
 export default function Document() {

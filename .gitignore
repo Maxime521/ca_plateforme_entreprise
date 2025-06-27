@@ -1,5 +1,6 @@
+*.db\n*.log\nnode_modules/
 node_modules
 .next
+.env*
+uploads/
 .env.local
-.env.example
-.env

@@ -1,4 +1,4 @@
-// components/SearchForm.js - Modern Financial Search Interface
+// components/SearchForm.js - FIXED VERSION with Better Button Alignment
 import { useState } from 'react';
 
 export default function SearchForm({ onSearch, loading }) {
@@ -22,10 +22,10 @@ export default function SearchForm({ onSearch, loading }) {
   return (
     <div className="max-w-3xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
-        {/* Search Input */}
+        {/* FIXED: Better Search Input with Properly Aligned Button */}
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-            <svg className="h-6 w-6 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
@@ -35,25 +35,28 @@ export default function SearchForm({ onSearch, loading }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Rechercher par nom d'entreprise, SIREN ou activité..."
-            className="block w-full pl-14 pr-32 py-5 border-2 border-gray-200 dark:border-dark-border rounded-2xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 text-lg bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 shadow-card hover:shadow-card-hover"
+            className="block w-full pl-12 pr-36 py-4 border-2 border-gray-200 dark:border-dark-border rounded-2xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 text-lg bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 shadow-card hover:shadow-card-hover"
             disabled={loading}
           />
           
-          {/* Search Button */}
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+          {/* FIXED: Better Button Positioning and Styling */}
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2">
             <button
               type="submit"
               disabled={loading || !query.trim()}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-xl transition-all duration-200 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-lg"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:shadow-none"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <span className="text-sm">Recherche...</span>
+                </div>
               ) : (
                 <>
-                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  Rechercher
+                  <span className="text-sm font-medium">Rechercher</span>
                 </>
               )}
             </button>
@@ -61,7 +64,7 @@ export default function SearchForm({ onSearch, loading }) {
         </div>
 
         {/* Search Type Selector */}
-        <div className="mt-4 flex items-center justify-center space-x-3">
+        <div className="mt-6 flex items-center justify-center space-x-3">
           <span className="text-sm text-gray-500 dark:text-gray-400">Type de recherche:</span>
           <div className="flex rounded-xl bg-gray-100 dark:bg-dark-card p-1">
             {[

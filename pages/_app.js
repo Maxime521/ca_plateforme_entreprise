@@ -1,3 +1,4 @@
+//pages/_app.js
 import '../styles/globals.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../hooks/useAuth';
