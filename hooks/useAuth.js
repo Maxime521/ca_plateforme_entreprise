@@ -1,8 +1,6 @@
-//==============================================================================
-// hooks/useAuth.js - FIXED VERSION with proper imports
-//==============================================================================
-
+// hooks/useAuth.js - ENHANCED VERSION with Auto-Redirect
 import { useState, useEffect, useContext, createContext } from 'react';
+import { useRouter } from 'next/router';
 import { 
   onAuthStateChanged, 
   signOut, 
@@ -12,7 +10,6 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-// ✅ FIXED: Import the functions we need
 import { canAccessFeature, hasPermission, ROLES } from '../utils/rolePermissions';
 
 const AuthContext = createContext();
@@ -21,8 +18,9 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [userRole, setUserRole] = useState('user'); // Track user role
+  const [userRole, setUserRole] = useState('user');
   const [permissions, setPermissions] = useState({});
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -37,16 +35,32 @@ export function AuthProvider({ children }) {
           setUserRole(userData?.role || 'user');
           setPermissions(userData?.permissions || {});
         } else {
-          console.log('👋 User signed out');
+          console.log('👋 User signed out - redirecting to home');
+          
+          // ✅ AUTO-REDIRECT ON LOGOUT
           setUser(null);
           setUserRole('user');
           setPermissions({});
+          
+          // Only redirect if not already on home page or login page
+          const currentPath = router.pathname;
+          const publicPaths = ['/', '/login', '/register'];
+          
+          if (!publicPaths.includes(currentPath)) {
+            console.log(`🏠 Auto-redirecting from ${currentPath} to home page`);
+            await router.replace('/');
+          }
         }
       } catch (error) {
         console.error('Auth state change error:', error);
         setUser(null);
         setUserRole('user');
         setPermissions({});
+        
+        // Redirect to home on error too
+        if (router.pathname !== '/') {
+          await router.replace('/');
+        }
       } finally {
         setLoading(false);
       }
@@ -61,7 +75,7 @@ export function AuthProvider({ children }) {
       unsubscribe();
       clearTimeout(timeoutId);
     };
-  }, []);
+  }, [router]);
 
   const syncUserWithDatabase = async (firebaseUser) => {
     try {
@@ -94,12 +108,10 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // ✅ FIXED: Role checking utilities using imported functions
+  // Role checking utilities
   const isAdmin = () => userRole === ROLES.ADMIN;
   const isUser = () => userRole === ROLES.USER;
   const hasUserPermission = (permission) => hasPermission(userRole, permission);
-  
-  // ✅ FIXED: Feature access control using imported function
   const canUserAccessFeature = (feature) => canAccessFeature(userRole, feature);
 
   const login = async (email, password) => {
@@ -107,6 +119,11 @@ export function AuthProvider({ children }) {
       setError(null);
       setLoading(true);
       const result = await signInWithEmailAndPassword(auth, email, password);
+      
+      // ✅ REDIRECT TO DASHBOARD AFTER LOGIN
+      console.log('🎯 Login successful - redirecting to dashboard');
+      await router.push('/companies');
+      
       return result.user;
     } catch (error) {
       setError(getErrorMessage(error));
@@ -126,6 +143,10 @@ export function AuthProvider({ children }) {
         await updateProfile(result.user, { displayName });
       }
       
+      // ✅ REDIRECT TO DASHBOARD AFTER REGISTRATION
+      console.log('🎯 Registration successful - redirecting to dashboard');
+      await router.push('/companies');
+      
       return result.user;
     } catch (error) {
       setError(getErrorMessage(error));
@@ -138,9 +159,23 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       setError(null);
+      console.log('🚪 Logging out user...');
+      
+      // Clear any pending navigation
+      await router.prefetch('/');
+      
+      // Sign out from Firebase (this will trigger the onAuthStateChanged listener)
       await signOut(auth);
+      
+      // The redirect is handled automatically in the onAuthStateChanged listener
+      console.log('✅ Logout completed');
+      
     } catch (error) {
+      console.error('Logout error:', error);
       setError(getErrorMessage(error));
+      
+      // Force redirect even if logout fails
+      await router.replace('/');
       throw error;
     }
   };
@@ -186,8 +221,8 @@ export function AuthProvider({ children }) {
     permissions,
     isAdmin,
     isUser,
-    hasPermission: hasUserPermission, // Renamed to avoid confusion
-    canAccessFeature: canUserAccessFeature, // Renamed to avoid confusion
+    hasPermission: hasUserPermission,
+    canAccessFeature: canUserAccessFeature,
     login,
     register,
     logout,
