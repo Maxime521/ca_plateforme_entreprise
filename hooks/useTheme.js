@@ -4,23 +4,23 @@ import { useState, useEffect, useContext, createContext } from 'react';
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
   const [mounted, setMounted] = useState(false);
 
   // Initialize theme on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        // Get saved theme or default to light
+        // Get saved theme or default to dark
         const savedTheme = localStorage.getItem('datacorp-theme');
-        const initialTheme = savedTheme === 'dark' ? 'dark' : 'light';
+        const initialTheme = savedTheme === 'light' ? 'light' : 'dark';
         
         setTheme(initialTheme);
         applyThemeToDOM(initialTheme);
       } catch (error) {
         console.error('Theme initialization error:', error);
-        setTheme('light');
-        applyThemeToDOM('light');
+        setTheme('dark');
+        applyThemeToDOM('dark');
       }
       
       setMounted(true);

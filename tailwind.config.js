@@ -113,6 +113,10 @@ module.exports = {
         'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         'financial': '0 10px 15px -3px rgba(20, 184, 166, 0.1), 0 4px 6px -2px rgba(20, 184, 166, 0.05)',
         'glow': '0 0 20px rgba(20, 184, 166, 0.3)',
+        '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        '3xl': '0 35px 60px -12px rgba(0, 0, 0, 0.35)',
+        'floating': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        'floating-hover': '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',

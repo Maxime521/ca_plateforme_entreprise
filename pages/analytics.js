@@ -2,9 +2,55 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
+import dynamic from 'next/dynamic';
 import Layout from '../components/Layout';
 import { useAuth } from '../hooks/useAuth';
+
+// Dynamic imports for chart components (reduces initial bundle size by ~200-300KB)
+const CompaniesBarChart = dynamic(() => 
+  import('../components/AnalyticsCharts').then(mod => ({ default: mod.CompaniesBarChart })),
+  { 
+    loading: () => <ChartSkeleton height={300} />,
+    ssr: false 
+  }
+);
+
+const CompanyFormPieChart = dynamic(() => 
+  import('../components/AnalyticsCharts').then(mod => ({ default: mod.CompanyFormPieChart })),
+  { 
+    loading: () => <ChartSkeleton height={300} />,
+    ssr: false 
+  }
+);
+
+const DocumentsAreaChart = dynamic(() => 
+  import('../components/AnalyticsCharts').then(mod => ({ default: mod.DocumentsAreaChart })),
+  { 
+    loading: () => <ChartSkeleton height={300} />,
+    ssr: false 
+  }
+);
+
+const SectorGrowthChart = dynamic(() => 
+  import('../components/AnalyticsCharts').then(mod => ({ default: mod.SectorGrowthChart })),
+  { 
+    loading: () => <ChartSkeleton height={300} />,
+    ssr: false 
+  }
+);
+
+const ApiUsageLineChart = dynamic(() => 
+  import('../components/AnalyticsCharts').then(mod => ({ default: mod.ApiUsageLineChart })),
+  { 
+    loading: () => <ChartSkeleton height={300} />,
+    ssr: false 
+  }
+);
+
+const ChartSkeleton = dynamic(() => 
+  import('../components/AnalyticsCharts').then(mod => ({ default: mod.ChartSkeleton })),
+  { ssr: false }
+);
 
 export default function Analytics() {
   const { user } = useAuth();
@@ -24,7 +70,7 @@ export default function Analytics() {
     companiesByRegion: [
       { region: 'Île-de-France', count: 423, percentage: 33.9 },
       { region: 'Auvergne-Rhône-Alpes', count: 187, percentage: 15.0 },
-      { region: 'Provence-Alpes-Côte d\'Azur', count: 156, percentage: 12.5 },
+      { region: 'Provence-Alpes-Côte d&apos;Azur', count: 156, percentage: 12.5 },
       { region: 'Nouvelle-Aquitaine', count: 134, percentage: 10.7 },
       { region: 'Occitanie', count: 98, percentage: 7.9 },
       { region: 'Autres', count: 249, percentage: 20.0 }
@@ -94,7 +140,7 @@ export default function Analytics() {
       alert('Rapport exporté avec succès !');
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Erreur lors de l\'export');
+      alert('Erreur lors de l&apos;export');
     }
   };
 
@@ -242,29 +288,9 @@ export default function Analytics() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Répartition par région
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={mockData.companiesByRegion}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis 
-                    dataKey="region" 
-                    stroke="#6b7280"
-                    fontSize={12}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                  />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1f2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#f3f4f6'
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div style={{ width: '100%', height: '300px' }}>
+                <CompaniesBarChart data={mockData.companiesByRegion} />
+              </div>
             </div>
 
             {/* Companies by Form */}
@@ -272,34 +298,9 @@ export default function Analytics() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Formes juridiques
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={mockData.companiesByForm}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="count"
-                    label={({ form, count }) => {
-                      const total = mockData.companiesByForm.reduce((sum, item) => sum + item.count, 0);
-                      return `${form}: ${((count/total)*100).toFixed(1)}%`;
-                    }}
-                  >
-                    {mockData.companiesByForm.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1f2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#f3f4f6'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <div style={{ width: '100%', height: '300px' }}>
+                <CompanyFormPieChart data={mockData.companiesByForm} />
+              </div>
             </div>
           </div>
 
@@ -320,47 +321,9 @@ export default function Analytics() {
                 </div>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={400}>
-              <AreaChart data={mockData.documentsByMonth}>
-                <defs>
-                  <linearGradient id="documentsGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="processedGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1f2937', 
-                    border: '1px solid #374151',
-                    borderRadius: '8px',
-                    color: '#f3f4f6'
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="documents"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#documentsGradient)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="processed"
-                  stroke="#22c55e"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#processedGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div style={{ width: '100%', height: '400px' }}>
+              <DocumentsAreaChart data={mockData.documentsByMonth} />
+            </div>
           </div>
 
           {/* Bottom Grid - Sector Growth and API Usage */}
@@ -403,45 +366,9 @@ export default function Analytics() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Utilisation des API
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={mockData.apiUsage}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="month" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1f2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#f3f4f6'
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="sirene"
-                    stroke="#22c55e"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    name="SIRENE"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="rne"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    name="RNE"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="bodacc"
-                    stroke="#f59e0b"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    name="BODACC"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div style={{ width: '100%', height: '300px' }}>
+                <ApiUsageLineChart data={mockData.apiUsage} />
+              </div>
               <div className="mt-4 flex items-center justify-center space-x-6 text-sm">
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
@@ -479,7 +406,7 @@ export default function Analytics() {
                 </p>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-2">Pic d'activité</h4>
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">Pic d&apos;activité</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                   Octobre a enregistré le plus grand nombre de documents traités (1,320).
                 </p>

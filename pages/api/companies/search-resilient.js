@@ -1,7 +1,7 @@
-// pages/api/companies/search-resilient.js
+// pages/api/companies/search-resilient.js - MIGRATED TO SUPABASE
 // A resilient version that works even with partial INSEE access
 
-import { prisma } from '../../../lib/prisma';
+import { createAdminClient } from '../../../lib/supabase';
 import BODACCAPIService from '../../../lib/bodacc-api';
 import axios from 'axios';
 
@@ -27,20 +27,21 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Resilient search for: "${q}"`);
 
-    // 1. Search local database
+    // 1. Search local database (Supabase)
     if (source === 'all' || source === 'local') {
       try {
-        const localResults = await prisma.company.findMany({
-          where: {
-            OR: [
-              { siren: { contains: q } },
-              { denomination: { contains: q } }
-            ]
-          },
-          take: 10
-        });
-        results.local = localResults;
-        console.log(`📂 Found ${localResults.length} local results`);
+        const supabase = createAdminClient();
+        
+        const { data: localResults, error } = await supabase
+          .from('companies')
+          .select('*')
+          .or(`siren.ilike.%${q}%,denomination.ilike.%${q}%`)
+          .limit(10);
+        
+        if (error) throw error;
+        
+        results.local = localResults || [];
+        console.log(`📂 Found ${localResults?.length || 0} local results`);
       } catch (error) {
         console.error('Local search error:', error);
         results.errors.push({ source: 'local', message: error.message });

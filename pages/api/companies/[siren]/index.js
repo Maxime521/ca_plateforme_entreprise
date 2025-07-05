@@ -1,8 +1,33 @@
-// pages/api/companies/[siren]/index.js
-import { prisma } from '../../../../lib/prisma';
+// pages/api/companies/[siren]/index.js - MIGRATED TO SUPABASE
+import { createAdminClient } from '../../../../lib/supabase';
 import APIService from '../../../../lib/api-services';
+import { validateSiren, securityHeaders } from '../../../../lib/middleware/validation';
+import { apiLimiter } from '../../../../lib/middleware/rateLimit';
 
-export default async function handler(req, res) {
+// Apply middleware
+const withMiddleware = (handler) => {
+  return async (req, res) => {
+    // Apply security headers
+    securityHeaders(req, res, () => {});
+    
+    // Apply rate limiting
+    return new Promise((resolve, reject) => {
+      apiLimiter(req, res, (rateLimitResult) => {
+        if (rateLimitResult instanceof Error) {
+          reject(rateLimitResult);
+          return;
+        }
+        
+        // Validate SIREN parameter
+        validateSiren(req, res, () => {
+          handler(req, res).then(resolve).catch(reject);
+        });
+      });
+    });
+  };
+};
+
+async function handler(req, res) {
   const { siren } = req.query;
   
   if (req.method !== 'GET') {
@@ -10,23 +35,37 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Check local database first
-    let company = await prisma.company.findUnique({
-      where: { siren },
-      include: {
-        documents: {
-          orderBy: { datePublication: 'desc' },
-          take: 10
-        },
-        financialRatios: {
-          orderBy: { year: 'desc' },
-          take: 5
-        }
-      }
-    });
+    const supabase = createAdminClient();
+    
+    // Check local database first with related data
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .select(`
+        *,
+        documents!inner(
+          id,
+          date_publication,
+          type_document,
+          source,
+          description
+        ),
+        financial_ratios!inner(
+          year,
+          ratio_type,
+          value
+        )
+      `)
+      .eq('siren', siren)
+      .order('documents(date_publication)', { ascending: false })
+      .order('financial_ratios(year)', { ascending: false })
+      .limit(10, { foreignTable: 'documents' })
+      .limit(5, { foreignTable: 'financial_ratios' })
+      .single();
+
+    let finalCompany = company;
 
     // If not found locally, fetch from SIRENE
-    if (!company) {
+    if (companyError && companyError.code === 'PGRST116') {
       const sireneData = await APIService.getCompanyByIdSIREN(siren);
       
       if (!sireneData) {
@@ -34,24 +73,31 @@ export default async function handler(req, res) {
       }
 
       // Create company in database
-      company = await prisma.company.create({
-        data: {
+      const { data: newCompany, error: createError } = await supabase
+        .from('companies')
+        .insert({
           siren: sireneData.siren,
           denomination: sireneData.denomination,
-          dateCreation: sireneData.dateCreation ? new Date(sireneData.dateCreation) : null,
+          date_creation: sireneData.dateCreation ? new Date(sireneData.dateCreation).toISOString() : null,
           active: sireneData.active,
-          formeJuridique: sireneData.formeJuridique,
-          codeAPE: sireneData.codeAPE,
-          capitalSocial: sireneData.capitalSocial
-        }
-      });
+          forme_juridique: sireneData.formeJuridique,
+          code_ape: sireneData.codeAPE,
+          capital_social: sireneData.capitalSocial
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      finalCompany = newCompany;
+    } else if (companyError) {
+      throw companyError;
     }
 
     // Fetch additional data from other APIs
     const additionalData = await fetchAdditionalData(siren);
 
     return res.status(200).json({
-      ...formatCompanyForResponse(company),
+      ...formatCompanyForResponse(finalCompany),
       ...additionalData
     });
 
@@ -93,24 +139,27 @@ function formatCompanyForResponse(company) {
     id: company.id,
     siren: company.siren,
     denomination: company.denomination,
-    formeJuridique: company.formeJuridique,
-    adresseSiege: company.adresseSiege,
-    libelleAPE: company.libelleAPE,
-    codeAPE: company.codeAPE,
-    dateCreation: company.dateCreation?.toISOString(),
+    formeJuridique: company.forme_juridique,
+    adresseSiege: company.adresse_siege,
+    libelleAPE: company.libelle_ape,
+    codeAPE: company.code_ape,
+    dateCreation: company.date_creation,
     active: company.active,
-    capitalSocial: company.capitalSocial,
+    capitalSocial: company.capital_social,
     documents: company.documents?.map(doc => ({
       id: doc.id,
-      datePublication: doc.datePublication,
-      typeDocument: doc.typeDocument,
+      datePublication: doc.date_publication,
+      typeDocument: doc.type_document,
       source: doc.source,
       description: doc.description
     })) || [],
-    financialRatios: company.financialRatios?.map(ratio => ({
+    financialRatios: company.financial_ratios?.map(ratio => ({
       year: ratio.year,
-      type: ratio.ratioType,
+      type: ratio.ratio_type,
       value: ratio.value
     })) || []
   };
 }
+
+// Export with middleware applied
+export default withMiddleware(handler);

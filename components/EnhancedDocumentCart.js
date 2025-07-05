@@ -111,23 +111,49 @@ export default function EnhancedDocumentCart() {
   const processINSEEDocument = async (document) => {
     updateUploadProgress(document.id, { 
       status: 'processing', 
-      progress: 25,
-      message: 'Génération du rapport INSEE...'
+      progress: 10,
+      message: 'Préparation du téléchargement INSEE...'
     });
 
-    const response = await fetch(`/api/test/generate-insee-html?siren=${document.siren}`);
+    // Step 1: Request INSEE PDF download
+    updateUploadProgress(document.id, { 
+      status: 'processing', 
+      progress: 30,
+      message: 'Téléchargement du certificat INSEE...'
+    });
+
+    const response = await fetch('/api/documents/insee-pdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        siren: document.siren,
+        siret: document.siret || null
+      })
+    });
+
     const data = await response.json();
 
     if (!data.success) {
-      throw new Error(data.error || 'INSEE processing failed');
+      throw new Error(data.error || 'Échec du téléchargement INSEE');
     }
+
+    updateUploadProgress(document.id, { 
+      status: 'processing', 
+      progress: 90,
+      message: 'Finalisation du document...'
+    });
 
     return {
       success: true,
-      downloadUrl: data.file.path,
-      filename: data.file.filename,
-      size: data.file.size,
-      type: 'html'
+      downloadUrl: data.document.url,
+      filename: data.document.fileName,
+      size: data.document.size,
+      type: 'pdf',
+      description: data.document.description,
+      officialName: data.document.officialName,
+      displayName: data.document.displayName
     };
   };
 

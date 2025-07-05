@@ -1,5 +1,5 @@
-// pages/api/companies/[siren]/sync.js
-import { prisma } from '../../../../lib/prisma';
+// pages/api/companies/[siren]/sync.js - MIGRATED TO SUPABASE
+import { createAdminClient } from '../../../../lib/supabase';
 import APIService from '../../../../lib/api-services';
 
 export default async function handler(req, res) {
@@ -10,11 +10,15 @@ export default async function handler(req, res) {
   const { siren } = req.query;
 
   try {
-    let company = await prisma.company.findUnique({
-      where: { siren }
-    });
+    const supabase = createAdminClient();
+    
+    let { data: company, error } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('siren', siren)
+      .single();
 
-    if (!company) {
+    if (error || !company) {
       return res.status(404).json({ message: 'Company not found' });
     }
 
@@ -23,16 +27,22 @@ export default async function handler(req, res) {
       const sireneData = await APIService.getCompanyByIdSIREN(siren);
       if (sireneData.uniteLegale) {
         const uniteLegale = sireneData.uniteLegale;
-        company = await prisma.company.update({
-          where: { siren },
-          data: {
+        const { data: updatedCompany, error: updateError } = await supabase
+          .from('companies')
+          .update({
             denomination: uniteLegale.denominationUniteLegale || company.denomination,
-            dateCreation: uniteLegale.dateCreationUniteLegale ? new Date(uniteLegale.dateCreationUniteLegale) : company.dateCreation,
+            date_creation: uniteLegale.dateCreationUniteLegale ? new Date(uniteLegale.dateCreationUniteLegale).toISOString() : company.date_creation,
             active: uniteLegale.etatAdministratifUniteLegale === 'A',
-            formeJuridique: uniteLegale.categorieJuridiqueUniteLegale || company.formeJuridique,
-            updatedAt: new Date()
-          }
-        });
+            forme_juridique: uniteLegale.categorieJuridiqueUniteLegale || company.forme_juridique,
+            updated_at: new Date().toISOString()
+          })
+          .eq('siren', siren)
+          .select()
+          .single();
+        
+        if (!updateError && updatedCompany) {
+          company = updatedCompany;
+        }
       }
     } catch (sireneError) {
       console.error('SIRENE sync error:', sireneError);
@@ -52,21 +62,23 @@ export default async function handler(req, res) {
       const ratiosData = await APIService.getFinancialRatios(siren);
       if (ratiosData.results && ratiosData.results.length > 0) {
         // Delete existing ratios and create new ones
-        await prisma.financialRatio.deleteMany({
-          where: { companyId: company.id }
-        });
+        await supabase
+          .from('financial_ratios')
+          .delete()
+          .eq('company_id', company.id);
 
         const ratiosToCreate = ratiosData.results.map(ratio => ({
-          companyId: company.id,
+          company_id: company.id,
           year: parseInt(ratio.annee),
-          ratioType: ratio.ratio_name,
+          ratio_type: ratio.ratio_name,
           value: parseFloat(ratio.ratio_value)
         }));
 
-        await prisma.financialRatio.createMany({
-          data: ratiosToCreate,
-          skipDuplicates: true
-        });
+        if (ratiosToCreate.length > 0) {
+          await supabase
+            .from('financial_ratios')
+            .insert(ratiosToCreate);
+        }
       }
     } catch (ratiosError) {
       console.error('Financial ratios sync error:', ratiosError);

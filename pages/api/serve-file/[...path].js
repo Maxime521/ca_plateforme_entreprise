@@ -42,6 +42,10 @@ export default async function handler(req, res) {
     res.setHeader('Content-Length', stats.size);
     res.setHeader('Cache-Control', 'public, max-age=31536000');
     
+    // Allow iframes for uploaded content
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
     // For HTML files, set proper charset
     if (mimeType === 'text/html') {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');

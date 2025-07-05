@@ -1,5 +1,5 @@
-// pages/api/companies/[siren]/details.js
-import { prisma } from '../../../../lib/prisma';
+// pages/api/companies/[siren]/details.js - MIGRATED TO SUPABASE
+import { createAdminClient } from '../../../../lib/supabase';
 import INSEEAPIService from '../../../../lib/insee-api';
 import BODACCAPIService from '../../../../lib/bodacc-api';
 
@@ -23,24 +23,45 @@ export default async function handler(req, res) {
       errors: []
     };
 
-    // 1. Get company from INSEE
+    // 1. Get company from INSEE - Always try INSEE first for fresh data
     try {
+      console.log(`📋 Attempting to get fresh company data from INSEE for SIREN: ${siren}`);
       const companyData = await INSEEAPIService.getCompanyBySiren(siren);
       if (companyData) {
+        console.log(`📋 Fresh company data received from INSEE:`, {
+          denomination: companyData.denomination,
+          formeJuridique: companyData.formeJuridique,
+          codeAPE: companyData.codeAPE,
+          libelleAPE: companyData.libelleAPE,
+          capitalSocial: companyData.capitalSocial
+        });
         result.company = companyData;
         
-        // Save/update in database
+        // Save fresh INSEE data to database
         await saveCompanyToDatabase(companyData);
+      } else {
+        console.log(`📋 No company data returned from INSEE for SIREN: ${siren}`);
+        throw new Error('No data returned from INSEE API');
       }
     } catch (error) {
+      console.log(`📋 INSEE API failed for SIREN ${siren}:`, error.message);
       result.errors.push({ source: 'insee', message: error.message });
       
-      // Try to get from local database if INSEE fails
-      const localCompany = await prisma.company.findUnique({
-        where: { siren }
-      });
-      if (localCompany) {
+      // Fall back to database only if INSEE completely fails
+      console.log(`📋 INSEE API failed, checking database for SIREN: ${siren}`);
+      const supabase = createAdminClient();
+      const { data: localCompany, error: localError } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('siren', siren)
+        .single();
+      
+      if (localCompany && !localError) {
+        console.log(`📋 Using database fallback data for SIREN: ${siren}`);
         result.company = localCompany;
+      } else {
+        console.log(`📋 No database record found for SIREN: ${siren}`);
+        result.company = null;
       }
     }
 
@@ -48,6 +69,30 @@ export default async function handler(req, res) {
     try {
       const establishments = await INSEEAPIService.getEstablishments(siren);
       result.establishments = establishments.slice(0, 10); // Limit to 10
+      
+      // Add SIRET and additional data from main establishment (siège social) to company data
+      if (result.company && establishments && establishments.length > 0) {
+        const mainEstablishment = establishments.find(est => est.siegeSocial);
+        const fallbackEstablishment = establishments[0];
+        
+        if (mainEstablishment && mainEstablishment.siret) {
+          result.company.siret = mainEstablishment.siret;
+          result.company.siretSource = 'siege_social';
+          result.company.siretLabel = 'Siège social';
+          // Add address from main establishment
+          if (mainEstablishment.adresse) {
+            result.company.adresseSiege = mainEstablishment.adresse;
+          }
+        } else if (fallbackEstablishment && fallbackEstablishment.siret) {
+          result.company.siret = fallbackEstablishment.siret;
+          result.company.siretSource = 'first_establishment';
+          result.company.siretLabel = 'Premier établissement';
+          // Add address from first establishment
+          if (fallbackEstablishment.adresse) {
+            result.company.adresseSiege = fallbackEstablishment.adresse;
+          }
+        }
+      }
     } catch (error) {
       result.errors.push({ source: 'insee-establishments', message: error.message });
     }
@@ -76,6 +121,17 @@ export default async function handler(req, res) {
       });
     }
 
+    // Debug: Log final result before sending
+    console.log(`📋 Final company result:`, {
+      siren: result.company?.siren, // Add SIREN to debug logging
+      denomination: result.company?.denomination,
+      formeJuridique: result.company?.formeJuridique,
+      codeAPE: result.company?.codeAPE,
+      libelleAPE: result.company?.libelleAPE,
+      effectif: result.company?.effectif,
+      capitalSocial: result.company?.capitalSocial
+    });
+
     return res.status(200).json({
       success: true,
       data: result
@@ -93,27 +149,24 @@ export default async function handler(req, res) {
 
 async function saveCompanyToDatabase(companyData) {
   try {
-    await prisma.company.upsert({
-      where: { siren: companyData.siren },
-      update: {
-        denomination: companyData.denomination,
-        active: companyData.active,
-        formeJuridique: companyData.formeJuridique,
-        codeAPE: companyData.codeAPE,
-        dateCreation: companyData.dateCreation ? new Date(companyData.dateCreation) : null,
-        capitalSocial: companyData.capitalSocial,
-        updatedAt: new Date()
-      },
-      create: {
+    const supabase = createAdminClient();
+    
+    const { data, error } = await supabase
+      .from('companies')
+      .upsert({
         siren: companyData.siren,
         denomination: companyData.denomination,
         active: companyData.active,
-        formeJuridique: companyData.formeJuridique,
-        codeAPE: companyData.codeAPE,
-        dateCreation: companyData.dateCreation ? new Date(companyData.dateCreation) : null,
-        capitalSocial: companyData.capitalSocial
-      }
-    });
+        forme_juridique: companyData.formeJuridique,
+        code_ape: companyData.codeAPE,
+        date_creation: companyData.dateCreation ? new Date(companyData.dateCreation).toISOString() : null,
+        capital_social: companyData.capitalSocial,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'siren', ignoreDuplicates: false });
+    
+    if (error) {
+      console.error('Database save error:', error);
+    }
   } catch (error) {
     console.error('Database save error:', error);
   }

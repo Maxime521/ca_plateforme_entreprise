@@ -1,20 +1,26 @@
-// components/DocumentCartIcon.js - Amazon-Style Shopping Cart
+// components/DocumentCartIcon.js - Amazon-Style Shopping Cart with Floating Variant
 //==============================================================================
 
 import { useDocumentCart } from '../hooks/useDocumentCart';
 
-export default function DocumentCartIcon() {
+export default function DocumentCartIcon({ floating = false, customClass = '' }) {
   const { cartCount, toggleCart, isOpen } = useDocumentCart();
+
+  const baseClasses = `relative p-3 rounded-xl transition-all duration-200 hover:scale-105 group ${
+    isOpen 
+      ? 'bg-primary-600 text-white shadow-lg' 
+      : 'bg-white dark:bg-dark-surface text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-card border border-gray-200 dark:border-dark-border hover:border-primary-300 dark:hover:border-primary-600'
+  }`;
+
+  const floatingClasses = floating 
+    ? 'shadow-2xl hover:shadow-3xl backdrop-blur-xl bg-white/90 dark:bg-dark-surface/90 border border-gray-200/50 dark:border-dark-border/50'
+    : '';
 
   return (
     <div className="relative">
       <button
         onClick={toggleCart}
-        className={`relative p-3 rounded-xl transition-all duration-200 hover:scale-105 group ${
-          isOpen 
-            ? 'bg-primary-600 text-white shadow-lg' 
-            : 'bg-white dark:bg-dark-surface text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-card border border-gray-200 dark:border-dark-border hover:border-primary-300 dark:hover:border-primary-600'
-        }`}
+        className={`${baseClasses} ${floatingClasses} ${customClass}`}
         title="Panier de documents"
       >
         {/* Amazon-style shopping cart SVG */}
@@ -37,21 +43,23 @@ export default function DocumentCartIcon() {
         <div className="absolute inset-0 rounded-xl bg-primary-500 opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
       </button>
       
-      {/* Enhanced tooltip */}
-      <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-        <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
-          {cartCount > 0 ? (
-            <>
-              <div className="font-medium">Panier: {cartCount} document{cartCount > 1 ? 's' : ''}</div>
-              <div className="text-gray-300">Cliquez pour voir</div>
-            </>
-          ) : (
-            'Panier vide'
-          )}
-          {/* Tooltip arrow */}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900 dark:border-b-gray-700"></div>
+      {/* Enhanced tooltip - only show for floating variant */}
+      {floating && (
+        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+          <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-nowrap backdrop-blur-xl">
+            {cartCount > 0 ? (
+              <>
+                <div className="font-medium">Panier: {cartCount} document{cartCount > 1 ? 's' : ''}</div>
+                <div className="text-gray-300">Cliquez pour voir</div>
+              </>
+            ) : (
+              'Panier vide'
+            )}
+            {/* Tooltip arrow */}
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900 dark:border-b-gray-700"></div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -200,26 +200,65 @@ select:focus {
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
-  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   @apply bg-gray-100 dark:bg-slate-800;
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-400 dark:bg-slate-600;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  @apply bg-gray-300 dark:bg-slate-600;
+  @apply rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-500 dark:bg-slate-500;
+  @apply bg-gray-400 dark:bg-slate-500;
 }
 
-/* Custom Animations */
+/* Enhanced Shadows for Floating Elements */
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.shadow-3xl {
+  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.35);
+}
+
+/* Floating Cart Icon Enhancements */
+.floating-cart {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Sidebar Transition Enhancements */
+.sidebar-transition {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-content-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover Effects */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Animations */
 @keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -230,23 +269,14 @@ select:focus {
   }
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
 @keyframes scaleIn {
   from {
-    transform: scale(0.95);
     opacity: 0;
+    transform: scale(0.9);
   }
   to {
-    transform: scale(1);
     opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -255,22 +285,22 @@ select:focus {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
   }
 }
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(20, 184, 166, 0.3);
+    box-shadow: 0 0 5px rgba(20, 184, 166, 0.5);
   }
   50% {
-    box-shadow: 0 0 30px rgba(20, 184, 166, 0.5);
+    box-shadow: 0 0 20px rgba(20, 184, 166, 0.8);
   }
 }
 
 /* Animation Classes */
 .animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .animate-slide-up {
@@ -278,40 +308,42 @@ select:focus {
 }
 
 .animate-scale-in {
-  animation: scaleIn 0.2s ease-out;
+  animation: scaleIn 0.3s ease-out;
 }
 
 .animate-bounce-subtle {
-  animation: bounceSubtle 2s infinite;
+  animation: bounceSubtle 2s ease-in-out infinite;
 }
 
 .animate-pulse-glow {
-  animation: pulse-glow 2s infinite;
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 /* Glass Effect */
 .glass {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .glass-dark {
-  background: rgba(30, 41, 59, 0.15);
+  background: rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(71, 85, 105, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Gradient Text */
 .gradient-text {
-  background: linear-gradient(135deg, #14b8a6, #0d9488);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .gradient-text-secondary {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -327,6 +359,7 @@ select:focus {
 .dark .skeleton {
   background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
   background-size: 200% 100%;
+  animation: loading 1.5s infinite;
 }
 
 @keyframes loading {
@@ -338,9 +371,10 @@ select:focus {
   }
 }
 
-/* Focus Visible */
+/* Focus Styles */
 .focus-visible:focus-visible {
-  @apply outline-none ring-4 ring-primary-500/20;
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
 }
 
 /* Print Styles */
@@ -350,12 +384,13 @@ select:focus {
   }
   
   body {
-    @apply bg-white text-black;
+    background: white !important;
+    color: black !important;
   }
   
   .card {
-    @apply bg-white border border-gray-300;
-    box-shadow: none;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
   }
 }
 
@@ -365,56 +400,58 @@ select:focus {
 }
 
 .transition-base {
-  @apply transition-all duration-200;
+  transition: all 0.2s ease-in-out;
 }
 
 .transition-slow {
-  @apply transition-all duration-500;
+  transition: all 0.3s ease-in-out;
 }
 
-/* Financial specific styles */
+/* Financial Highlight */
 .financial-highlight {
-  @apply bg-gradient-to-r from-primary-50 to-blue-50;
-  @apply dark:from-primary-900/20 dark:to-blue-900/20;
-  @apply border border-primary-200 dark:border-primary-800;
-  @apply rounded-xl p-4;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(13, 148, 136, 0.1) 100%);
+  border: 1px solid rgba(20, 184, 166, 0.2);
 }
 
+/* Metric Cards */
 .metric-card {
-  @apply bg-white dark:bg-slate-800;
-  @apply border border-gray-200 dark:border-slate-700;
-  @apply rounded-xl p-6;
-  @apply hover:shadow-lg transition-shadow duration-300;
+  @apply bg-white/90 dark:bg-slate-800/90;
+  @apply backdrop-blur-xl;
+  @apply border border-gray-200/50 dark:border-slate-700/50;
+  @apply rounded-2xl shadow-lg;
+  @apply transition-all duration-300;
 }
 
 .metric-value {
-  @apply text-3xl font-bold text-gray-900 dark:text-white;
+  @apply text-3xl font-bold;
   @apply gradient-text;
 }
 
 .metric-label {
-  @apply text-sm font-medium text-gray-600 dark:text-gray-400;
+  @apply text-sm font-medium;
+  @apply text-gray-600 dark:text-gray-400;
   @apply uppercase tracking-wide;
 }
 
-/* Responsive Design Helpers */
+/* Mobile Optimizations */
 @media (max-width: 640px) {
   .mobile-full {
-    @apply w-full;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
   }
   
   .mobile-hide {
-    @apply hidden;
+    display: none;
   }
 }
 
-/* High contrast mode support */
+/* High Contrast Mode */
 @media (prefers-contrast: high) {
   .card {
-    @apply border-2 border-gray-900 dark:border-gray-100;
+    border-width: 2px;
   }
   
   .btn-primary {
-    @apply border-2 border-gray-900;
+    border: 2px solid currentColor;
   }
 }

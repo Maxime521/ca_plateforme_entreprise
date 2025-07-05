@@ -4,10 +4,14 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import Layout from '../components/Layout';
 import SearchForm from '../components/SearchForm';
 import CompanyCard from '../components/CompanyCard';
 import CompanyPDFSection from '../components/CompanyPDFSection';
+import SiretDisplay, { SiretLabel } from '../components/SiretDisplay';
+import { InlineNumberWithCopy } from '../components/CopyButton';
+import { SearchErrorBoundary, CompanyCardErrorBoundary } from '../components/ErrorBoundary';
 import { useAuth } from '../hooks/useAuth';
 import axios from 'axios';
 
@@ -24,7 +28,7 @@ export default function Home() {
       if (!searchQuery || searchQuery.length < 3) return null;
       
       try {
-        const response = await axios.get('/api/companies/search-v2', {
+        const response = await axios.get('/api/companies/search-enriched', {
           params: { q: searchQuery }
         });
         return response.data;
@@ -47,10 +51,33 @@ export default function Home() {
     setSelectedCompany(company);
   };
 
-  // FIXED: Navigate to company details page
+  // FIXED: Navigate to company details page with debugging and fallback
   const handleViewFullDetails = (company) => {
-    if (company.siren) {
-      router.push(`/company/${company.siren}`);
+    console.log('🔗 Navigation triggered with company:', company);
+    console.log('🔗 Company SIREN:', company?.siren);
+    console.log('🔗 Company SIRET:', company?.siret);
+    console.log('🔗 Company object keys:', Object.keys(company || {}));
+    
+    // Extract SIREN from SIRET if SIREN is missing
+    const siren = company?.siren || (company?.siret ? company.siret.substring(0, 9) : null);
+    console.log('🔗 Extracted SIREN:', siren);
+    
+    if (siren) {
+      const targetUrl = `/company/${siren}`;
+      console.log('🔗 Navigating to:', targetUrl);
+      
+      try {
+        // Try Next.js router first
+        router.push(targetUrl);
+      } catch (routerError) {
+        console.error('Router error, trying window.location:', routerError);
+        // Fallback to window.location
+        window.location.href = targetUrl;
+      }
+    } else {
+      console.error('❌ No SIREN found in company object:', company);
+      console.error('❌ Company object structure:', JSON.stringify(company, null, 2));
+      alert('Erreur: SIREN manquant pour cette entreprise');
     }
   };
 
@@ -83,7 +110,7 @@ export default function Home() {
               {/* Main heading */}
               <div className="mb-8">
                 <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl lg:text-7xl">
-                  <span className="block">Données d'entreprises</span>
+                  <span className="block">Données d&apos;entreprises</span>
                   <span className="block bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent">
                     officielles et fiables
                   </span>
@@ -117,12 +144,14 @@ export default function Home() {
 
               {/* Search Form */}
               <div className="mb-16">
-                <SearchForm onSearch={handleSearch} loading={searchLoading} />
-                {searchQuery && searchQuery.length < 3 && (
-                  <p className="text-center text-sm text-orange-600 dark:text-orange-400 mt-3">
-                    Veuillez entrer au moins 3 caractères pour rechercher
-                  </p>
-                )}
+                <SearchErrorBoundary>
+                  <SearchForm onSearch={handleSearch} loading={searchLoading} />
+                  {searchQuery && searchQuery.length < 3 && (
+                    <p className="text-center text-sm text-orange-600 dark:text-orange-400 mt-3">
+                      Veuillez entrer au moins 3 caractères pour rechercher
+                    </p>
+                  )}
+                </SearchErrorBoundary>
               </div>
             </div>
           </div>
@@ -188,16 +217,18 @@ export default function Home() {
             {searchResults && searchResults.results && searchResults.results.length > 0 ? (
               <div className="max-w-4xl mx-auto">
                 <div className="space-y-4">
-                  {searchResults.results.map((company) => (
-                    <div key={company.id || company.siren} className="relative group">
-                      <CompanyCard
-                        company={company}
-                        onClick={handleCompanySelect}
-                      />
-                      {/* Source indicator */}
-                      <div className="absolute top-4 right-4 z-10">
-                        <SourceBadge source={company.source} />
-                      </div>
+                  {searchResults.results.map((company, index) => (
+                    <div key={`${company.source || 'unknown'}-${company.siren || company.id || index}`} className="relative group">
+                      <CompanyCardErrorBoundary companyName={company.denomination}>
+                        <CompanyCard
+                          company={company}
+                          onClick={handleCompanySelect}
+                        />
+                        {/* Source indicator */}
+                        <div className="absolute top-4 right-4 z-10">
+                          <SourceBadge source={company.source} />
+                        </div>
+                      </CompanyCardErrorBoundary>
                     </div>
                   ))}
                 </div>
@@ -261,9 +292,14 @@ function CompanyDetailsModal({ company, onClose, onViewFullDetails }) {
                   {company.denomination || `Entreprise ${company.siren}`}
                 </h2>
                 <div className="flex items-center space-x-4 mt-2">
-                  <p className="text-primary-600 dark:text-primary-400 font-medium">
-                    SIREN: {company.siren}
-                  </p>
+                  <div className="text-primary-600 dark:text-primary-400 font-medium">
+                    SIREN: <InlineNumberWithCopy 
+                      number={company.siren}
+                      label="SIREN"
+                      variant="primary"
+                      className="inline"
+                    />
+                  </div>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                     company.active 
                       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
@@ -327,12 +363,18 @@ function CompanyDetailsModal({ company, onClose, onViewFullDetails }) {
               >
                 Fermer
               </button>
+              
+              {/* Button with debugging */}
               <button 
-                onClick={() => onViewFullDetails(company)}
+                onClick={() => {
+                  console.log('Button clicked! Company data:', company);
+                  onViewFullDetails(company);
+                }}
                 className="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl text-sm font-medium text-white hover:from-primary-600 hover:to-primary-700 transition-all duration-200 hover:scale-105 shadow-lg"
               >
                 Voir les détails complets
               </button>
+              
             </div>
           </div>
         </div>
@@ -356,7 +398,13 @@ function CompanyOverviewContent({ company }) {
           
           <div className="space-y-4">
             <InfoItem label="Dénomination" value={company.denomination} />
-            <InfoItem label="SIREN" value={company.siren} />
+            <InfoItem label="SIREN" value={company.siren} copyable={true} />
+            <InfoItemWithSiret 
+              label={<SiretLabel siretSource={company.siretSource} />} 
+              siret={company.siret}
+              siretSource={company.siretSource}
+              siretLabel={company.siretLabel}
+            />
             <InfoItem label="Forme juridique" value={company.formeJuridique} />
             <InfoItem label="Code APE" value={company.codeAPE} />
             <InfoItem label="Date de création" value={company.dateCreation ? new Date(company.dateCreation).toLocaleDateString('fr-FR') : 'N/A'} />
@@ -389,7 +437,23 @@ function CompanyOverviewContent({ company }) {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-primary-100">SIREN:</span>
-              <span className="font-mono font-medium">{company.siren}</span>
+              <InlineNumberWithCopy 
+                number={company.siren}
+                label="SIREN"
+                variant="gradient"
+                className="font-medium"
+              />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-primary-100">SIRET:</span>
+              <SiretDisplay 
+                siret={company.siret}
+                siretSource={company.siretSource}
+                siretLabel={company.siretLabel}
+                variant="gradient"
+                showTooltip={false}
+                className="text-white"
+              />
             </div>
             <div className="flex justify-between">
               <span className="text-primary-100">Forme:</span>
@@ -430,15 +494,41 @@ function CompanyOverviewContent({ company }) {
 }
 
 // Helper component for information items
-function InfoItem({ label, value }) {
+function InfoItem({ label, value, copyable = false }) {
   return (
     <div>
       <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
         {label}
       </p>
-      <p className="text-sm text-gray-900 dark:text-white">
-        {value || 'Non renseigné'}
+      <div className="text-sm text-gray-900 dark:text-white">
+        {copyable && value ? (
+          <InlineNumberWithCopy 
+            number={value}
+            label={label}
+            variant="default"
+          />
+        ) : (
+          <span>{value || 'Non renseigné'}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InfoItemWithSiret({ label, siret, siretSource, siretLabel }) {
+  return (
+    <div>
+      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+        {label}
       </p>
+      <div className="text-sm text-gray-900 dark:text-white">
+        <SiretDisplay 
+          siret={siret}
+          siretSource={siretSource}
+          siretLabel={siretLabel}
+          variant="clean-with-source"
+        />
+      </div>
     </div>
   );
 }
@@ -498,15 +588,15 @@ function NoResults({ query }) {
           <span className="text-3xl">🔍</span>
         </div>
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-          Aucun résultat trouvé
+          Aucun r&eacute;sultat trouv&eacute;
         </h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Aucune entreprise trouvée pour "<span className="font-medium">{query}</span>"
+          Aucune entreprise trouv&eacute;e pour &quot;<span className="font-medium">{query}</span>&quot;
         </p>
         <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
-          <p>• Vérifiez l'orthographe</p>
+          <p>• V&eacute;rifiez l&apos;orthographe</p>
           <p>• Essayez un SIREN (9 chiffres)</p>
-          <p>• Utilisez des termes plus généraux</p>
+          <p>• Utilisez des termes plus g&eacute;n&eacute;raux</p>
         </div>
       </div>
     </div>
@@ -546,10 +636,10 @@ function FeatureShowcase() {
     <div className="max-w-6xl mx-auto">
       <div className="text-center mb-16">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-          Plateforme complète de données d'entreprises
+          Plateforme complète de données d&apos;entreprises
         </h2>
         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-          Accédez aux informations officielles de plus de 10 millions d'entreprises françaises
+          Accédez aux informations officielles de plus de 10 millions d&apos;entreprises françaises
         </p>
       </div>
 
@@ -643,7 +733,7 @@ function LoginPage() {
             {isLogin ? 'Connexion' : 'Inscription'}
           </h2>
           <p className="mt-2 text-gray-600 dark:text-gray-300">
-            Accédez à la plateforme de données d'entreprises
+            Accédez à la plateforme de données d&apos;entreprises
           </p>
         </div>
         
@@ -734,7 +824,7 @@ function LoginPage() {
                     onClick={() => setIsLogin(!isLogin)}
                     className="text-primary-600 dark:text-primary-400 hover:text-primary-500 text-sm font-medium transition-colors"
                   >
-                    {isLogin ? "Pas de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
+                    {isLogin ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
                   </button>
                   {isLogin && (
                     <div>

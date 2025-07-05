@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useDocumentCart } from '../hooks/useDocumentCart';
 import { useAuth } from '../hooks/useAuth';
+import BatchDownloadManager from './download/BatchDownloadManager';
 
 export default function DocumentCartSidebar() {
   const { 
@@ -18,6 +19,7 @@ export default function DocumentCartSidebar() {
   
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
+  const [showBatchDownload, setShowBatchDownload] = useState(false);
 
   const handleUploadAll = async () => {
     if (!user || cartItems.length === 0) return;
@@ -35,11 +37,32 @@ export default function DocumentCartSidebar() {
         });
 
         try {
-          // Simulate download and upload process
-          const response = await fetch(document.url);
+          // Use server-side download endpoints to avoid CORS issues
+          let downloadUrl;
+          
+          switch (document.type.toLowerCase()) {
+            case 'inpi':
+              downloadUrl = `/api/documents/download/inpi/${document.siren}`;
+              break;
+            case 'insee':
+              downloadUrl = `/api/documents/download/insee/${document.siren}${document.siret ? `?siret=${document.siret}` : ''}`;
+              break;
+            case 'bodacc':
+              downloadUrl = `/api/documents/download/bodacc/${document.siren}`;
+              break;
+            default:
+              throw new Error(`Unsupported document type: ${document.type}`);
+          }
+
+          const response = await fetch(downloadUrl, {
+            headers: {
+              'Authorization': `Bearer ${await user.getIdToken()}`
+            }
+          });
           
           if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const errorText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`Download failed: ${response.status} ${response.statusText} - ${errorText}`);
           }
 
           const blob = await response.blob();
@@ -72,7 +95,8 @@ export default function DocumentCartSidebar() {
               progress: 100 
             });
           } else {
-            throw new Error('Upload failed');
+            const uploadError = await uploadResponse.text().catch(() => 'Upload failed');
+            throw new Error(`Upload failed: ${uploadResponse.status} - ${uploadError}`);
           }
 
         } catch (error) {
@@ -99,6 +123,18 @@ export default function DocumentCartSidebar() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleBatchDownloadComplete = (progressData) => {
+    setShowBatchDownload(false);
+    // Clear cart after successful batch download
+    clearCart();
+    // Show success notification
+    console.log('Batch download completed:', progressData);
+  };
+
+  const handleStartBatchDownload = () => {
+    setShowBatchDownload(true);
   };
 
   const getTotalSize = () => {
@@ -168,7 +204,7 @@ export default function DocumentCartSidebar() {
                     </h4>
                     <ul className="text-sm text-blue-700 dark:text-blue-400 mt-2 space-y-1">
                       <li>• Recherchez une entreprise</li>
-                      <li>• Cliquez sur "Documents PDF"</li>
+                      <li>• Cliquez sur &quot;Documents PDF&quot;</li>
                       <li>• Ajoutez les documents au panier</li>
                       <li>• Téléchargez tout en une fois</li>
                     </ul>
@@ -178,9 +214,9 @@ export default function DocumentCartSidebar() {
             </div>
           ) : (
             <div className="space-y-4">
-              {cartItems.map((document) => (
+              {cartItems.map((document, index) => (
                 <CartDocumentItem 
-                  key={document.id} 
+                  key={`${document.id}-${index}`} 
                   document={document}
                   progress={uploadProgress[document.id]}
                   onRemove={() => removeFromCart(document.id)}
@@ -229,23 +265,46 @@ export default function DocumentCartSidebar() {
               🗑️ Vider le panier
             </button>
             
-            <button
-              onClick={handleUploadAll}
-              disabled={isUploading || cartItems.length === 0}
-              className="w-full px-4 py-3 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 shadow-lg"
-            >
-              {isUploading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Téléchargement...
-                </div>
-              ) : (
-                `⬆️ Télécharger tout (${cartItems.length})`
-              )}
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={handleStartBatchDownload}
+                disabled={isUploading || cartItems.length === 0}
+                className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 shadow-lg"
+              >
+                🚀 Téléchargement par lot (${cartItems.length})
+              </button>
+              
+              <button
+                onClick={handleUploadAll}
+                disabled={isUploading || cartItems.length === 0}
+                className="w-full px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 shadow-lg text-sm"
+              >
+                {isUploading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Téléchargement...
+                  </div>
+                ) : (
+                  `⬆️ Téléchargement simple`
+                )}
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Batch Download Modal */}
+      {showBatchDownload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-60 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <BatchDownloadManager 
+              documents={cartItems}
+              onDownloadComplete={handleBatchDownloadComplete}
+              onClose={() => setShowBatchDownload(false)}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -145,7 +145,7 @@ export default function SearchForm({ onSearch, loading }) {
                 <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                   <li className="flex items-center">
                     <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
-                    <strong>Nom:</strong> "CARREFOUR", "TOTAL"
+                    <strong>Nom:</strong> &quot;CARREFOUR&quot;, &quot;TOTAL&quot;
                   </li>
                   <li className="flex items-center">
                     <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
@@ -153,7 +153,7 @@ export default function SearchForm({ onSearch, loading }) {
                   </li>
                   <li className="flex items-center">
                     <span className="w-2 h-2 bg-primary-500 rounded-full mr-3"></span>
-                    <strong>Activité:</strong> "restaurant", "informatique"
+                    <strong>Activité:</strong> &quot;restaurant&quot;, &quot;informatique&quot;
                   </li>
                 </ul>
               </div>

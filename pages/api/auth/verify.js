@@ -1,6 +1,5 @@
-// pages/api/auth/verify.js
-import admin from '../../../lib/firebase-admin';
-import { prisma } from '../../../lib/prisma';
+// pages/api/auth/verify.js - MIGRATED TO SUPABASE
+import { createAdminClient } from '../../../lib/supabase';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -10,20 +9,40 @@ export default async function handler(req, res) {
   const { token } = req.body;
 
   try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
+    const supabase = createAdminClient();
+    
+    // Verify token with Supabase
+    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
+    if (error) throw error;
     
     // Check if user exists in our database
-    let user = await prisma.user.findUnique({
-      where: { uid: decodedToken.uid }
-    });
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('uid', supabaseUser.id)
+      .single();
 
     // Create user if doesn't exist
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          uid: decodedToken.uid,
-          email: decodedToken.email,
-          displayName: decodedToken.name || decodedToken.email,
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert({
+          uid: supabaseUser.id,
+          email: supabaseUser.email,
+          display_name: supabaseUser.user_metadata?.displayName || supabaseUser.email,
+          role: 'user'
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      return res.status(200).json({ 
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          displayName: newUser.display_name,
+          role: newUser.role
         }
       });
     }
@@ -32,7 +51,7 @@ export default async function handler(req, res) {
       user: {
         id: user.id,
         email: user.email,
-        displayName: user.displayName,
+        displayName: user.display_name,
         role: user.role
       }
     });

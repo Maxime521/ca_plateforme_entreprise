@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useDocumentCart } from '../hooks/useDocumentCart';
 import PDFDocumentCard from './PDFDocumentCard';
+import AvisSituationCard from './AvisSituationCard';
 
 export default function CompanyPDFSection({ company }) {
   const [showAllPDFs, setShowAllPDFs] = useState(false);
@@ -14,18 +15,30 @@ export default function CompanyPDFSection({ company }) {
   const { data: pdfData, isLoading, error } = useQuery({
     queryKey: ['company-pdfs', company.siren],
     queryFn: async () => {
-      const response = await fetch(`/api/documents/generate-pdfs?siren=${company.siren}`);
+      console.log(`🔍 Fetching PDFs for SIREN: ${company.siren}`);
+      console.log(`🔍 Company data:`, { siren: company.siren, siret: company.siret });
+      
+      // Build URL with SIRET if available
+      let url = `/api/documents/generate-pdfs?siren=${company.siren}`;
+      if (company.siret) {
+        url += `&siret=${company.siret}`;
+        console.log(`🔍 Including SIRET in request: ${company.siret}`);
+      }
+      
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch PDFs');
       }
-      return response.json();
+      const data = await response.json();
+      console.log(`📄 PDF Data received:`, data);
+      return data;
     },
     enabled: !!company.siren,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const handleAddAllToCart = () => {
-    const availablePDFs = pdfData?.pdfs?.filter(pdf => pdf.available) || [];
+    const availablePDFs = pdfData?.documents?.filter(pdf => pdf.available) || [];
     availablePDFs.forEach(pdf => {
       addToCart(pdf);
     });
@@ -78,94 +91,128 @@ export default function CompanyPDFSection({ company }) {
     );
   }
 
-  const availablePDFs = pdfData?.pdfs?.filter(pdf => pdf.available) || [];
-  const unavailablePDFs = pdfData?.pdfs?.filter(pdf => !pdf.available) || [];
+  const availablePDFs = pdfData?.documents?.filter(pdf => pdf.available) || [];
+  const unavailablePDFs = pdfData?.documents?.filter(pdf => !pdf.available) || [];
+
+  // Handle AVIS DE SITUATION document refresh
+  const handleAvisDownload = (document) => {
+    // Refresh the PDF data to show the newly downloaded document
+    // This would trigger a refetch of the useQuery
+    console.log('AVIS DE SITUATION downloaded:', document);
+  };
 
   return (
-    <div className="bg-white dark:bg-dark-surface rounded-xl border border-gray-200 dark:border-dark-border p-6">
+    <div className="space-y-6">
       
-      {/* Enhanced Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-            <span className="mr-2">📄</span>
-            Documents PDF Officiels
+      {/* AVIS DE SITUATION Section */}
+      <div className="bg-white dark:bg-dark-surface rounded-xl border border-gray-200 dark:border-dark-border p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-2">
+            <span className="mr-2">🏛️</span>
+            AVIS DE SITUATION INSEE
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {availablePDFs.length} document{availablePDFs.length > 1 ? 's' : ''} disponible{availablePDFs.length > 1 ? 's' : ''}
-            {cartCount > 0 && (
-              <span className="ml-2 text-primary-600 dark:text-primary-400 font-medium">
-                • {cartCount} dans le panier
-              </span>
-            )}
+            Document officiel de situation au répertoire SIRENE
           </p>
         </div>
-
-        {unavailablePDFs.length > 0 && (
-          <button
-            onClick={() => setShowAllPDFs(!showAllPDFs)}
-            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-          >
-            {showAllPDFs ? 'Masquer indisponibles' : `Voir tous (${pdfData.pdfs.length})`}
-          </button>
-        )}
+        
+        <AvisSituationCard 
+          company={company}
+          document={{
+            id: `avis-situation-${company.siren}-${Date.now()}`,
+            available: false, // Will be checked dynamically
+            type: 'avis-situation'
+          }}
+          onDownload={handleAvisDownload}
+        />
       </div>
 
-      {/* Available PDFs */}
-      {availablePDFs.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {availablePDFs.map((pdf) => (
-            <PDFDocumentCard key={pdf.id} document={pdf} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 mb-6">
-          <div className="text-gray-400 dark:text-gray-500 text-4xl mb-4">📄</div>
-          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Aucun document disponible
-          </h4>
-          <p className="text-gray-600 dark:text-gray-400">
-            Les documents PDF pour cette entreprise ne sont pas accessibles actuellement
-          </p>
-        </div>
-      )}
-
-      {/* Unavailable PDFs (show when toggled) */}
-      {showAllPDFs && unavailablePDFs.length > 0 && (
-        <div className="border-t border-gray-200 dark:border-dark-border pt-6">
-          <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4 flex items-center">
-            <span className="mr-2">⚠️</span>
-            Documents non disponibles
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {unavailablePDFs.map((pdf) => (
-              <PDFDocumentCard key={pdf.id} document={pdf} showPreview={false} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Enhanced Quick Actions */}
-      <div className="border-t border-gray-200 dark:border-dark-border pt-6">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            <p className="flex items-center">
-              <span className="mr-2">💡</span>
-              <strong>Astuce:</strong> Ajoutez les documents au panier pour les télécharger tous ensemble
+      {/* Other Documents Section */}
+      <div className="bg-white dark:bg-dark-surface rounded-xl border border-gray-200 dark:border-dark-border p-6">
+        {/* Enhanced Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+              <span className="mr-2">📄</span>
+              Documents PDF Officiels
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {availablePDFs.length} document{availablePDFs.length > 1 ? 's' : ''} disponible{availablePDFs.length > 1 ? 's' : ''}
+              {cartCount > 0 && (
+                <span className="ml-2 text-primary-600 dark:text-primary-400 font-medium">
+                  • {cartCount} dans le panier
+                </span>
+              )}
             </p>
           </div>
-          
-          {availablePDFs.length > 0 && (
+
+          {unavailablePDFs.length > 0 && (
             <button
-              onClick={handleAddAllToCart}
-              className="px-4 py-2 text-sm border border-primary-300 dark:border-primary-600 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex items-center space-x-2"
+              onClick={() => setShowAllPDFs(!showAllPDFs)}
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
             >
-              <span>➕</span>
-              <span>Tout ajouter ({availablePDFs.length})</span>
+              {showAllPDFs ? 'Masquer indisponibles' : `Voir tous (${pdfData.documents.length})`}
             </button>
           )}
         </div>
+
+        {/* Available PDFs */}
+        {availablePDFs.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {availablePDFs.map((pdf, index) => (
+              <PDFDocumentCard key={`available-${pdf.id}-${pdf.type || 'unknown'}-${index}`} document={pdf} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 mb-6">
+            <div className="text-gray-400 dark:text-gray-500 text-4xl mb-4">📄</div>
+            <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Aucun document disponible
+            </h4>
+            <p className="text-gray-600 dark:text-gray-400">
+              Les documents PDF pour cette entreprise ne sont pas accessibles actuellement
+            </p>
+          </div>
+        )}
+
+        {/* Unavailable PDFs (show when toggled) */}
+        {showAllPDFs && unavailablePDFs.length > 0 && (
+          <div className="border-t border-gray-200 dark:border-dark-border pt-6">
+            <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4 flex items-center">
+              <span className="mr-2">⚠️</span>
+              Documents non disponibles
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {unavailablePDFs.map((pdf, index) => (
+                <PDFDocumentCard key={`unavailable-${pdf.id}-${pdf.type || 'unknown'}-${index}`} document={pdf} showPreview={false} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Quick Actions */}
+        <div className="border-t border-gray-200 dark:border-dark-border pt-6">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="flex items-center">
+                <span className="mr-2">💡</span>
+                <strong>Astuce:</strong> Ajoutez les documents au panier pour les télécharger tous ensemble
+              </p>
+            </div>
+            
+            {availablePDFs.length > 0 && (
+              <button
+                onClick={handleAddAllToCart}
+                className="px-4 py-2 text-sm border border-primary-300 dark:border-primary-600 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex items-center space-x-2"
+              >
+                <span>➕</span>
+                <span>Tout ajouter ({availablePDFs.length})</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
+      
     </div>
   );
 }

@@ -352,7 +352,7 @@ function AdminProfileTab({ settings, setSettings, handleSettingChange, user }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Nom d'affichage
+              Nom d&apos;affichage
             </label>
             <input
               type="text"
@@ -377,7 +377,7 @@ function AdminProfileTab({ settings, setSettings, handleSettingChange, user }) {
         {/* Admin notifications with more options */}
         <div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            Notifications d'administration
+            Notifications d&apos;administration
           </h3>
           <div className="space-y-4">
             {Object.entries(settings.notifications).map(([key, value]) => (
@@ -387,11 +387,11 @@ function AdminProfileTab({ settings, setSettings, handleSettingChange, user }) {
                     {key === 'email' && 'Notifications par email'}
                     {key === 'push' && 'Notifications push'}
                     {key === 'weekly' && 'Rapport hebdomadaire'}
-                    {key === 'errors' && 'Alertes d\'erreur système'}
+                    {key === 'errors' && 'Alertes d&apos;erreur syst&egrave;me'}
                   </span>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {key === 'errors' && 'Alertes critiques pour les erreurs API et système'}
-                    {key === 'weekly' && 'Rapport automatique des métriques de la plateforme'}
+                    {key === 'errors' && 'Alertes critiques pour les erreurs API et syst&egrave;me'}
+                    {key === 'weekly' && 'Rapport automatique des m&eacute;triques de la plateforme'}
                   </p>
                 </div>
                 <button
@@ -481,7 +481,7 @@ function AdminDataTab({ settings, setSettings }) {
               Contrôle total des données
             </h3>
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              Gérez la synchronisation, l'archivage et l'exportation des données pour toute la plateforme.
+              Gérez la synchronisation, l&apos;archivage et l&apos;exportation des données pour toute la plateforme.
             </p>
           </div>
         </div>
@@ -494,13 +494,13 @@ function AdminDisplayTab({ settings, setSettings, toggleTheme, isDark }) {
   return (
     <div className="p-6">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-        Préférences d'affichage - Administration
+        Préférences d&apos;affichage - Administration
       </h2>
       
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            Thème de l'interface
+            Thème de l&apos;interface
           </h3>
           <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
             <div className="flex items-center space-x-3">
@@ -510,7 +510,7 @@ function AdminDisplayTab({ settings, setSettings, toggleTheme, isDark }) {
                   Mode {isDark ? 'sombre' : 'clair'}
                 </span>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Changez l'apparence globale de l'interface
+                  Changez l&apos;apparence globale de l&apos;interface
                 </p>
               </div>
             </div>
@@ -697,7 +697,7 @@ function UserProfileTab({ settings, setSettings, user }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Nom d'affichage
+              Nom d&apos;affichage
             </label>
             <input
               type="text"
@@ -730,7 +730,7 @@ function UserDisplayTab({ settings, setSettings, toggleTheme, isDark }) {
   return (
     <div className="p-6">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-        Préférences d'affichage
+        Préférences d&apos;affichage
       </h2>
       
       <div className="space-y-6">
@@ -746,7 +746,7 @@ function UserDisplayTab({ settings, setSettings, toggleTheme, isDark }) {
                   Mode {isDark ? 'sombre' : 'clair'}
                 </span>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Changez l'apparence de l'interface
+                  Changez l&apos;apparence de l&apos;interface
                 </p>
               </div>
             </div>

@@ -1,5 +1,5 @@
-// pages/api/companies/[siren]/documents.js
-import { prisma } from '../../../../lib/prisma';
+// pages/api/companies/[siren]/documents.js - MIGRATED TO SUPABASE
+import { createAdminClient } from '../../../../lib/supabase';
 import APIService from '../../../../lib/api-services';
 
 export default async function handler(req, res) {
@@ -10,19 +10,32 @@ export default async function handler(req, res) {
   const { siren } = req.query;
 
   try {
+    const supabase = createAdminClient();
+    
     // First check local database
-    let documents = await prisma.document.findMany({
-      where: { company: { siren } },
-      orderBy: { datePublication: 'desc' }
-    });
+    let { data: documents, error: docsError } = await supabase
+      .from('documents')
+      .select(`
+        *,
+        companies!inner(siren)
+      `)
+      .eq('companies.siren', siren)
+      .order('date_publication', { ascending: false });
+
+    if (docsError) {
+      console.error('Documents query error:', docsError);
+      documents = [];
+    }
 
     // If no local documents, fetch from APIs
-    if (documents.length === 0) {
-      const company = await prisma.company.findUnique({
-        where: { siren }
-      });
+    if (!documents || documents.length === 0) {
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('siren', siren)
+        .single();
 
-      if (!company) {
+      if (companyError || !company) {
         return res.status(404).json({ message: 'Company not found' });
       }
 
@@ -32,26 +45,33 @@ export default async function handler(req, res) {
         
         if (bodaccData.results && bodaccData.results.length > 0) {
           const documentsToCreate = bodaccData.results.map(record => ({
-            companyId: company.id,
-            datePublication: new Date(record.dateparution),
-            typeDocument: 'Publication BODACC',
+            company_id: company.id,
+            date_publication: new Date(record.dateparution).toISOString(),
+            type_document: 'Publication BODACC',
             source: 'BODACC',
-            typeAvis: record.typeavis,
+            type_avis: record.typeavis,
             reference: record.numerodannonce,
             description: record.publicationavis || 'Publication BODACC',
             contenu: record.texte,
-            lienDocument: record.pdf || null
+            lien_document: record.pdf || null
           }));
 
-          await prisma.document.createMany({
-            data: documentsToCreate,
-            skipDuplicates: true
-          });
+          if (documentsToCreate.length > 0) {
+            await supabase
+              .from('documents')
+              .insert(documentsToCreate);
+          }
 
-          documents = await prisma.document.findMany({
-            where: { company: { siren } },
-            orderBy: { datePublication: 'desc' }
-          });
+          const { data: refreshedDocs } = await supabase
+            .from('documents')
+            .select(`
+              *,
+              companies!inner(siren)
+            `)
+            .eq('companies.siren', siren)
+            .order('date_publication', { ascending: false });
+          
+          documents = refreshedDocs || [];
         }
 
         // Try to fetch RNE documents
@@ -68,7 +88,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json(documents);
+    return res.status(200).json(documents || []);
   } catch (error) {
     console.error('Documents fetch error:', error);
     return res.status(500).json({ message: 'Internal server error' });

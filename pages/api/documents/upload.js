@@ -1,8 +1,8 @@
-// pages/api/documents/upload.js - WORKING UPLOAD ENDPOINT
+// pages/api/documents/upload.js - WORKING UPLOAD ENDPOINT - MIGRATED TO SUPABASE
 import { IncomingForm } from 'formidable';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { prisma } from '../../../lib/prisma';
+import { createAdminClient } from '../../../lib/supabase';
 
 // Disable Next.js body parsing to handle file uploads
 export const config = {
@@ -94,21 +94,35 @@ export default async function handler(req, res) {
     }
 
     // Try to find or create company in database
+    const supabase = createAdminClient();
     let company;
     try {
-      company = await prisma.company.findUnique({
-        where: { siren }
-      });
+      const { data: existingCompany, error: findError } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('siren', siren)
+        .single();
 
-      if (!company) {
+      if (findError && findError.code !== 'PGRST116') {
+        throw findError;
+      }
+
+      if (!existingCompany) {
         console.log(`🏢 Creating new company record for SIREN: ${siren}`);
-        company = await prisma.company.create({
-          data: {
+        const { data: newCompany, error: createError } = await supabase
+          .from('companies')
+          .insert({
             siren,
             denomination: `Entreprise ${siren}`,
             active: true
-          }
-        });
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        company = newCompany;
+      } else {
+        company = existingCompany;
       }
     } catch (dbError) {
       console.error('Database error:', dbError);
@@ -133,17 +147,22 @@ export default async function handler(req, res) {
     // Create document record in database
     let document;
     try {
-      document = await prisma.document.create({
-        data: {
-          companyId: company.id,
-          typeDocument: `PDF ${type.toUpperCase()}`,
+      const { data: newDocument, error: docError } = await supabase
+        .from('documents')
+        .insert({
+          company_id: company.id,
+          type_document: `PDF ${type.toUpperCase()}`,
           source: type.toUpperCase(),
           description: description || `Document ${type.toUpperCase()}`,
-          lienDocument: `/uploads/${safeFileName}`,
-          datePublication: new Date(),
+          lien_document: `/uploads/${safeFileName}`,
+          date_publication: new Date().toISOString(),
           reference: `${type}_${siren}_${timestamp}`
-        }
-      });
+        })
+        .select()
+        .single();
+
+      if (docError) throw docError;
+      document = newDocument;
       console.log(`📝 Document record created: ${document.id}`);
     } catch (dbError) {
       console.error('Database document creation error:', dbError);

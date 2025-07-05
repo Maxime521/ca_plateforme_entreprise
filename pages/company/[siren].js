@@ -3,10 +3,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../../components/Layout';
 import CompanyPDFSection from '../../components/CompanyPDFSection';
 import { useBODACCReports } from '../../components/BODACCReportViewer'; // ✅ NEW IMPORT
+import SiretDisplay, { SiretLabel } from '../../components/SiretDisplay'; // ✅ NEW IMPORT
+import { InlineNumberWithCopy } from '../../components/CopyButton'; // ✅ COPY FUNCTIONALITY
 import { useAuth } from '../../hooks/useAuth';
 import axios from 'axios';
 
@@ -17,7 +20,7 @@ export default function CompanyDetailsPage() {
   const [activeTab, setActiveTab] = useState('overview');
   
   // ✅ NEW: BODACC Viewer Integration
-  const { openReportViewer, BODACCReportViewer } = useBODACCReports();
+  const { openReportViewer, ReportViewerModal } = useBODACCReports();
 
   // Fetch company details
   const { data: company, isLoading, error } = useQuery({
@@ -88,10 +91,12 @@ export default function CompanyDetailsPage() {
 
   // ✅ NEW: Open Enhanced Cart with current company
   const openEnhancedCart = () => {
-    // Add current company documents to cart
+    // Add current company documents to cart with unique keys
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
     const companyDocs = [
       {
-        id: `bodacc_${company.company.siren}`,
+        id: `bodacc-cart-${company.company.siren}-${timestamp}-${randomSuffix}`,
         name: `BODACC_${company.company.siren}.pdf`,
         type: 'bodacc',
         siren: company.company.siren,
@@ -99,7 +104,7 @@ export default function CompanyDetailsPage() {
         available: true
       },
       {
-        id: `insee_${company.company.siren}`,
+        id: `insee-cart-${company.company.siren}-${timestamp}-${randomSuffix}-2`,
         name: `INSEE_${company.company.siren}.html`,
         type: 'insee',
         siren: company.company.siren,
@@ -121,8 +126,8 @@ export default function CompanyDetailsPage() {
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Accès non autorisé</h2>
-            <p className="text-gray-600 dark:text-gray-400">Veuillez vous connecter pour accéder aux détails de l'entreprise.</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Acc&egrave;s non autoris&eacute;</h2>
+            <p className="text-gray-600 dark:text-gray-400">Veuillez vous connecter pour acc&eacute;der aux d&eacute;tails de l&apos;entreprise.</p>
           </div>
         </div>
       </Layout>
@@ -204,8 +209,27 @@ export default function CompanyDetailsPage() {
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                  SIREN: {companyData.siren}
+                  SIREN: <InlineNumberWithCopy 
+                    number={companyData.siren}
+                    label="SIREN"
+                    variant="muted"
+                    className="ml-1"
+                  />
                 </span>
+                {companyData.siret && (
+                  <span className="inline-flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    SIRET: <SiretDisplay 
+                      siret={companyData.siret}
+                      siretSource={companyData.siretSource}
+                      siretLabel={companyData.siretLabel}
+                      variant="compact"
+                      className="ml-1"
+                    />
+                  </span>
+                )}
                 {companyData.formeJuridique && (
                   <span className="inline-flex items-center">
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,7 +275,7 @@ export default function CompanyDetailsPage() {
             
             {/* Overview Tab */}
             {activeTab === 'overview' && (
-              <CompanyOverviewTab company={companyData} />
+              <CompanyOverviewTab company={{...companyData, siren: companyData.siren || siren}} />
             )}
 
             {/* ✅ ENHANCED Documents PDF Tab */}
@@ -341,7 +365,7 @@ export default function CompanyDetailsPage() {
       </div>
 
       {/* ✅ NEW: BODACC Viewer Modal */}
-      <BODACCReportViewer />
+      <ReportViewerModal />
     </Layout>
   );
 }
@@ -351,6 +375,13 @@ export default function CompanyDetailsPage() {
 //==============================================================================
 
 function CompanyOverviewTab({ company }) {
+  // Debug: Log company data to see what we're receiving
+  console.log('CompanyOverviewTab received company data:', {
+    siren: company?.siren,
+    denomination: company?.denomination,
+    hasCompanyObject: !!company
+  });
+  
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       
@@ -367,9 +398,15 @@ function CompanyOverviewTab({ company }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <InfoItem label="Dénomination" value={company.denomination} />
-              <InfoItem label="SIREN" value={company.siren} />
+              <InfoItem label="SIREN" value={company.siren} copyable={true} />
+              <InfoItemWithSiret 
+                label={<SiretLabel siretSource={company.siretSource} />} 
+                siret={company.siret}
+                siretSource={company.siretSource}
+                siretLabel={company.siretLabel}
+              />
               <InfoItem label="Forme juridique" value={company.formeJuridique} />
-              <InfoItem label="Code APE" value={company.codeAPE} />
+              <InfoItem label="Code APE" value={company.codeAPE ? `${company.codeAPE}${company.libelleAPE ? ` - ${company.libelleAPE}` : ''}` : 'Non renseigné'} />
             </div>
             <div className="space-y-4">
               <InfoItem label="Date de création" value={company.dateCreation ? new Date(company.dateCreation).toLocaleDateString('fr-FR') : 'N/A'} />
@@ -406,7 +443,23 @@ function CompanyOverviewTab({ company }) {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-primary-100">SIREN:</span>
-              <span className="font-mono font-medium">{company.siren}</span>
+              <InlineNumberWithCopy 
+                number={company.siren}
+                label="SIREN"
+                variant="gradient"
+                className="font-medium"
+              />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-primary-100">SIRET:</span>
+              <SiretDisplay 
+                siret={company.siret}
+                siretSource={company.siretSource}
+                siretLabel={company.siretLabel}
+                variant="gradient"
+                showTooltip={false}
+                className="text-white"
+              />
             </div>
             <div className="flex justify-between">
               <span className="text-primary-100">Forme:</span>
@@ -463,7 +516,7 @@ function CompanyEstablishmentsTab({ establishments }) {
           Aucun établissement trouvé
         </h3>
         <p className="text-gray-600 dark:text-gray-400">
-          Les données d'établissements ne sont pas disponibles pour cette entreprise.
+          Les données d&apos;établissements ne sont pas disponibles pour cette entreprise.
         </p>
       </div>
     );
@@ -539,7 +592,7 @@ function CompanyAnnouncementsTab({ announcements }) {
           Aucune annonce trouvée
         </h3>
         <p className="text-gray-600 dark:text-gray-400">
-          Aucune publication BODACC n'est disponible pour cette entreprise.
+          Aucune publication BODACC n&apos;est disponible pour cette entreprise.
         </p>
       </div>
     );
@@ -658,7 +711,7 @@ function CompanyFinancialTab({ company }) {
           <div className="flex items-center justify-between">
             <div>
               <p className={`text-sm font-medium ${company.active ? 'text-green-100' : 'text-red-100'}`}>
-                Statut de l'entreprise
+                Statut de l&apos;entreprise
               </p>
               <p className="text-2xl font-bold">
                 {company.active ? 'Active' : 'Inactive'}
@@ -700,7 +753,7 @@ function CompanyFinancialTab({ company }) {
               </h5>
               <p className="text-sm text-blue-700 dark:text-blue-400">
                 Les données financières détaillées ne sont disponibles que pour les entreprises ayant publié leurs comptes annuels. 
-                Consultez les documents PDF pour plus d'informations.
+                Consultez les documents PDF pour plus d&apos;informations.
               </p>
             </div>
           </div>
@@ -714,15 +767,41 @@ function CompanyFinancialTab({ company }) {
 // Helper Components
 //==============================================================================
 
-function InfoItem({ label, value }) {
+function InfoItem({ label, value, copyable = false }) {
   return (
     <div>
       <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
         {label}
       </p>
-      <p className="text-sm text-gray-900 dark:text-white">
-        {value || 'Non renseigné'}
+      <div className="text-sm text-gray-900 dark:text-white">
+        {copyable && value ? (
+          <InlineNumberWithCopy 
+            number={value}
+            label={label}
+            variant="default"
+          />
+        ) : (
+          <span>{value || 'Non renseigné'}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InfoItemWithSiret({ label, siret, siretSource, siretLabel }) {
+  return (
+    <div>
+      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+        {label}
       </p>
+      <div className="text-sm text-gray-900 dark:text-white">
+        <SiretDisplay 
+          siret={siret}
+          siretSource={siretSource}
+          siretLabel={siretLabel}
+          variant="clean-with-source"
+        />
+      </div>
     </div>
   );
 }
@@ -809,12 +888,12 @@ function CompanyNotFound({ siren, error }) {
         >
           ← Retour
         </button>
-        <a
+        <Link
           href="/"
           className="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
         >
           🏠 Accueil
-        </a>
+        </Link>
       </div>
     </div>
   );

@@ -1,15 +1,22 @@
-// components/BODACCReportViewer.js - View Generated BODACC Reports in Browser
-import { useState, useEffect } from 'react';
+// components/BODACCReportViewer.js - Enhanced View with Scaling Controls
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import ScalablePDFViewer from './ScalablePDFViewer';
 
 export default function BODACCReportViewer({ siren, onClose }) {
   const [reportUrl, setReportUrl] = useState(null);
-  const [reportType, setReportType] = useState('html'); // 'html' or 'pdf'
+  const [reportType, setReportType] = useState('html');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [useScalableViewer, setUseScalableViewer] = useState(true);
+  const [error, setError] = useState(null);
+  const [noRecords, setNoRecords] = useState(false);
 
   // Generate BODACC report
-  const generateReport = async (type = 'html') => {
+  const generateReport = useCallback(async (type = 'html') => {
     setIsGenerating(true);
+    setError(null);
+    setNoRecords(false);
+    
     try {
       const endpoint = type === 'pdf' 
         ? `/api/test/generate-bodacc-pdf?siren=${siren}`
@@ -21,24 +28,42 @@ export default function BODACCReportViewer({ siren, onClose }) {
       if (data.success) {
         setReportUrl(data.file.path);
         setReportType(type);
+        setError(null);
+        setNoRecords(false);
         return data;
       } else {
-        throw new Error(data.message || 'Report generation failed');
+        // Handle specific error cases gracefully
+        const errorMessage = data.message || 'Report generation failed';
+        console.warn(`BODACC report generation failed: ${errorMessage}`);
+        
+        // Set appropriate state based on error type
+        setReportUrl(null);
+        setReportType(type);
+        setError(errorMessage);
+        setNoRecords(response.status === 404);
+        
+        return { success: false, message: errorMessage, noRecords: response.status === 404 };
       }
     } catch (error) {
       console.error('Report generation error:', error);
-      throw error;
+      setReportUrl(null);
+      setError(error.message || 'Network error occurred');
+      setNoRecords(false);
+      return { success: false, message: error.message || 'Network error occurred' };
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [siren]);
 
   // Auto-generate HTML report on mount
   useEffect(() => {
     if (siren) {
-      generateReport('html').catch(console.error);
+      generateReport('html').catch(error => {
+        console.warn('Initial report generation failed:', error);
+        // Error is already handled in generateReport function
+      });
     }
-  }, [siren]);
+  }, [siren, generateReport]);
 
   // Fetch existing reports
   const { data: existingReports, isLoading } = useQuery({
@@ -50,8 +75,26 @@ export default function BODACCReportViewer({ siren, onClose }) {
     enabled: !!siren
   });
 
+
+  // If we have a report URL and scalable viewer is enabled, use ScalablePDFViewer
+  if (reportUrl && useScalableViewer) {
+    return (
+      <ScalablePDFViewer
+        url={reportUrl}
+        title={`Rapport BODACC - SIREN ${siren}`}
+        type={reportType}
+        siren={siren}
+        onClose={onClose}
+        onViewerToggle={() => setUseScalableViewer(false)}
+        onTypeChange={generateReport} // Pass the generateReport function
+        currentType={reportType}
+        isGenerating={isGenerating}
+      />
+    );
+  }
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm">
       <div className="flex items-center justify-center min-h-screen p-4">
         <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
           
@@ -93,6 +136,17 @@ export default function BODACCReportViewer({ siren, onClose }) {
                   📋 PDF
                 </button>
               </div>
+
+              {/* Viewer Mode Toggle */}
+              {reportUrl && (
+                <button
+                  onClick={() => setUseScalableViewer(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  title="Activer le visualiseur avancé avec zoom"
+                >
+                  🔍 Zoom
+                </button>
+              )}
               
               {/* Actions */}
               {reportUrl && (
@@ -131,17 +185,54 @@ export default function BODACCReportViewer({ siren, onClose }) {
                   </p>
                 </div>
               </div>
+            ) : error ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-md">
+                  <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span className="text-4xl">{noRecords ? '📭' : '⚠️'}</span>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    {noRecords ? 'Aucune annonce trouvée' : 'Erreur de génération'}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    {noRecords 
+                      ? `Aucune annonce BODACC n'a été trouvée pour le SIREN ${siren}. Cette entreprise n'a peut-être pas d'annonces légales publiées.`
+                      : error
+                    }
+                  </p>
+                  <div className="flex space-x-3 justify-center">
+                    <button
+                      onClick={() => generateReport('html')}
+                      disabled={isGenerating}
+                      className="px-6 py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
+                    >
+                      🔄 Réessayer HTML
+                    </button>
+                    <button
+                      onClick={() => generateReport('pdf')}
+                      disabled={isGenerating}
+                      className="px-6 py-3 border border-primary-600 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 disabled:opacity-50 font-medium rounded-lg transition-colors"
+                    >
+                      🔄 Réessayer PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
             ) : reportUrl ? (
-              <div className="h-full">
+              <div className="h-full relative">
+                <div className="absolute top-4 right-4 z-10 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                    Astuce: Cliquez sur &quot;🔍 Zoom&quot; pour un meilleur contrôle
+                  </div>
+                </div>
+                
                 {reportType === 'html' ? (
-                  // HTML Report Viewer
                   <iframe
                     src={reportUrl}
                     className="w-full h-full border-0"
                     title={`Rapport BODACC ${siren}`}
                   />
                 ) : (
-                  // PDF Report Viewer
                   <iframe
                     src={`${reportUrl}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH`}
                     className="w-full h-full border-0"
@@ -244,11 +335,23 @@ export function useBODACCReports() {
         window.open(data.file.path, '_blank');
         return data;
       } else {
-        throw new Error(data.message || 'Report generation failed');
+        // Handle errors gracefully without throwing
+        const errorMessage = data.message || 'Report generation failed';
+        console.warn(`BODACC report generation failed: ${errorMessage}`);
+        
+        // Show user-friendly notification
+        if (response.status === 404) {
+          alert(`Aucune annonce BODACC trouvée pour le SIREN ${siren}.\n\nCette entreprise n'a peut-être pas d'annonces légales publiées.`);
+        } else {
+          alert(`Erreur lors de la génération du rapport: ${errorMessage}`);
+        }
+        
+        return { success: false, message: errorMessage, noRecords: response.status === 404 };
       }
     } catch (error) {
       console.error('Report generation error:', error);
-      throw error;
+      alert(`Erreur réseau: ${error.message}\n\nVeuillez vérifier votre connexion et réessayer.`);
+      return { success: false, message: error.message || 'Network error occurred' };
     }
   };
 
@@ -258,7 +361,7 @@ export function useBODACCReports() {
     openReportViewer,
     closeReportViewer,
     generateAndView,
-    BODACCReportViewer: () => isViewerOpen && currentSiren ? (
+    ReportViewerModal: () => isViewerOpen && currentSiren ? (
       <BODACCReportViewer 
         siren={currentSiren} 
         onClose={closeReportViewer} 

@@ -37,48 +37,41 @@ function DocumentsContent({ userRole, isAdmin }) {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
 
-  // Mock documents data
-  const mockDocuments = [
-    {
-      id: '1',
-      companyName: 'TechCorp Innovation SAS',
-      siren: '123456789',
-      datePublication: '2024-01-15',
-      typeDocument: 'Statuts constitutifs',
-      source: 'RNE',
-      description: 'Dépôt des statuts constitutifs de la société',
-      lienDocument: '#',
-      fileSize: '2.3 MB',
-      status: 'Traité',
-      tags: ['Création', 'Statuts']
-    },
-    {
-      id: '2',
-      companyName: 'Green Energy Solutions SARL',
-      siren: '987654321',
-      datePublication: '2023-12-10',
-      typeDocument: 'Comptes annuels',
-      source: 'RNE',
-      description: 'Comptes annuels 2023 - Exercice clos le 31/12/2023',
-      lienDocument: '#',
-      fileSize: '5.7 MB',
-      status: 'Traité',
-      tags: ['Comptabilité', '2023']
-    },
-    // Add more mock documents...
-  ];
+  // Fetch documents using React Query with real API
+  const searchParams = {
+    q: filters.search || filters.company,
+    typeDocument: filters.typeDocument,
+    source: filters.source,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    limit: 50 // Get more results for better filtering
+  };
 
-  const filteredDocuments = mockDocuments.filter(doc => {
-    return (
-      (filters.search === '' || 
-       doc.companyName.toLowerCase().includes(filters.search.toLowerCase()) ||
-       doc.siren.includes(filters.search) ||
-       doc.description.toLowerCase().includes(filters.search.toLowerCase())) &&
-      (filters.typeDocument === '' || doc.typeDocument === filters.typeDocument) &&
-      (filters.source === '' || doc.source === filters.source) &&
-      (filters.company === '' || doc.companyName.toLowerCase().includes(filters.company.toLowerCase()))
-    );
+  const {
+    data: documentsData,
+    error: documentsError,
+    isLoading: documentsLoading,
+    refetch: refetchDocuments
+  } = useQuery({
+    queryKey: ['documents', searchParams],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      Object.entries(searchParams).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+      
+      const response = await fetch(`/api/documents/search?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
+      return response.json();
+    },
+    enabled: !!(searchParams.q || searchParams.typeDocument || searchParams.source || searchParams.dateFrom || searchParams.dateTo),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false
   });
+
+  const filteredDocuments = documentsData?.results || [];
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -185,7 +178,7 @@ function DocumentsContent({ userRole, isAdmin }) {
                 <option value="Statuts constitutifs">Statuts constitutifs</option>
                 <option value="Comptes annuels">Comptes annuels</option>
                 <option value="Publication BODACC">Publication BODACC</option>
-                <option value="Rapport d'activité">Rapport d'activité</option>
+                <option value="Rapport d&apos;activité">Rapport d&apos;activité</option>
                 <option value="Bilan comptable">Bilan comptable</option>
               </select>
             </div>
@@ -214,7 +207,7 @@ function DocumentsContent({ userRole, isAdmin }) {
                 type="text"
                 value={filters.company}
                 onChange={(e) => handleFilterChange('company', e.target.value)}
-                placeholder="Nom d'entreprise..."
+                placeholder="Nom d&apos;entreprise..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
@@ -224,13 +217,35 @@ function DocumentsContent({ userRole, isAdmin }) {
         {/* Results Summary */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
           <div className="mb-4 sm:mb-0">
-            <p className="text-gray-600 dark:text-gray-300">
-              <span className="font-semibold">{filteredDocuments.length}</span> document{filteredDocuments.length > 1 ? 's' : ''} trouvé{filteredDocuments.length > 1 ? 's' : ''}
-            </p>
+            {documentsLoading ? (
+              <p className="text-gray-600 dark:text-gray-300">Recherche en cours...</p>
+            ) : documentsError ? (
+              <p className="text-red-600 dark:text-red-400">Erreur lors de la recherche</p>
+            ) : (
+              <p className="text-gray-600 dark:text-gray-300">
+                <span className="font-semibold">{documentsData?.total || filteredDocuments.length}</span> document{(documentsData?.total || filteredDocuments.length) > 1 ? 's' : ''} trouvé{(documentsData?.total || filteredDocuments.length) > 1 ? 's' : ''}
+                {documentsData?.total > filteredDocuments.length && (
+                  <span className="text-sm text-gray-500 ml-2">
+                    (affichage des {filteredDocuments.length} premiers)
+                  </span>
+                )}
+              </p>
+            )}
           </div>
           <div className="flex items-center space-x-2">
+            {/* Refresh button */}
+            <button 
+              onClick={() => refetchDocuments()}
+              disabled={documentsLoading}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
+            >
+              🔄 Actualiser
+            </button>
             {/* Download selection - available for all users */}
-            <button className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+            <button 
+              disabled={filteredDocuments.length === 0}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
+            >
               📥 Télécharger sélection
             </button>
           </div>
@@ -238,7 +253,33 @@ function DocumentsContent({ userRole, isAdmin }) {
 
         {/* Documents Display */}
         <div className="space-y-4">
-          {filteredDocuments.length > 0 ? (
+          {documentsLoading ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 dark:text-gray-500 text-6xl mb-4">⏳</div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Recherche en cours...
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Veuillez patienter pendant que nous recherchons vos documents
+              </p>
+            </div>
+          ) : documentsError ? (
+            <div className="text-center py-12">
+              <div className="text-red-400 dark:text-red-500 text-6xl mb-4">⚠️</div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Erreur lors de la recherche
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                {documentsError?.message || 'Une erreur s\'est produite lors de la recherche'}
+              </p>
+              <button
+                onClick={() => refetchDocuments()}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+              >
+                Réessayer
+              </button>
+            </div>
+          ) : filteredDocuments.length > 0 ? (
             filteredDocuments.map((doc) => (
               <DocumentCard
                 key={doc.id}
@@ -251,17 +292,25 @@ function DocumentsContent({ userRole, isAdmin }) {
             <div className="text-center py-12">
               <div className="text-gray-400 dark:text-gray-500 text-6xl mb-4">📄</div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Aucun document trouvé
+                {(filters.search || filters.typeDocument || filters.source || filters.company) 
+                  ? 'Aucun document trouvé' 
+                  : 'Commencez votre recherche'
+                }
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Essayez de modifier vos critères de recherche
+                {(filters.search || filters.typeDocument || filters.source || filters.company) 
+                  ? 'Essayez de modifier vos critères de recherche'
+                  : 'Utilisez les filtres ci-dessus pour rechercher des documents'
+                }
               </p>
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-              >
-                Effacer les filtres
-              </button>
+              {(filters.search || filters.typeDocument || filters.source || filters.company) && (
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                >
+                  Effacer les filtres
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -283,6 +332,21 @@ function DocumentsContent({ userRole, isAdmin }) {
 function DocumentCard({ document, onClick, userRole }) {
   const isAdmin = userRole === 'admin';
   
+  // Format file size or show default
+  const formatFileSize = (size) => {
+    if (size) return size;
+    return 'N/A';
+  };
+
+  // Format date safely
+  const formatDate = (dateString) => {
+    try {
+      return new Date(dateString).toLocaleDateString('fr-FR');
+    } catch (error) {
+      return 'Date inconnue';
+    }
+  };
+
   return (
     <div
       onClick={() => onClick(document)}
@@ -292,33 +356,38 @@ function DocumentCard({ document, onClick, userRole }) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center">
           <span className="text-2xl mr-3">📄</span>
-          <div>
+          <div className="min-w-0 flex-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-              {document.typeDocument}
+              {document.typeDocument || 'Document'}
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              {document.companyName}
+            <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
+              {document.companyName || 'Entreprise inconnue'}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              SIREN: {document.siren || 'N/A'}
             </p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-            {document.status}
+            {document.status || 'Traité'}
           </span>
-          {/* REMOVED: Admin-only edit indicator */}
         </div>
       </div>
       
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-        {document.description}
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+        {document.description || 'Aucune description disponible'}
       </p>
       
       <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
         <div className="flex items-center space-x-4">
-          <span>📅 {new Date(document.datePublication).toLocaleDateString('fr-FR')}</span>
-          <span>📊 {document.source}</span>
+          <span>📅 {formatDate(document.datePublication)}</span>
+          <span>📊 {document.source || 'Source inconnue'}</span>
+          {document.reference && (
+            <span>📋 {document.reference}</span>
+          )}
         </div>
-        <span>💾 {document.fileSize}</span>
+        <span>💾 {formatFileSize(document.fileSize)}</span>
       </div>
     </div>
   );
@@ -326,6 +395,15 @@ function DocumentCard({ document, onClick, userRole }) {
 
 function DocumentModal({ document, onClose, userRole }) {
   const isAdmin = userRole === 'admin';
+  
+  // Format date safely
+  const formatDate = (dateString) => {
+    try {
+      return new Date(dateString).toLocaleDateString('fr-FR');
+    } catch (error) {
+      return 'Date inconnue';
+    }
+  };
   
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -338,12 +416,12 @@ function DocumentModal({ document, onClose, userRole }) {
               <div className="flex items-center space-x-3">
                 <span className="text-3xl">📄</span>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {document.typeDocument}
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                    {document.typeDocument || 'Document'}
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-300">{document.companyName}</p>
+                  <p className="text-gray-600 dark:text-gray-300">{document.companyName || 'Entreprise inconnue'}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">SIREN: {document.siren || 'N/A'}</p>
                 </div>
-                {/* REMOVED: Role indicator from modal */}
               </div>
               <button
                 onClick={onClose}
@@ -353,11 +431,53 @@ function DocumentModal({ document, onClose, userRole }) {
               </button>
             </div>
 
-            {/* Document details... */}
+            {/* Document details */}
             <div className="space-y-4">
-              <p><strong>Description:</strong> {document.description}</p>
-              <p><strong>Source:</strong> {document.source}</p>
-              <p><strong>Date:</strong> {new Date(document.datePublication).toLocaleDateString('fr-FR')}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Description:</p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    {document.description || 'Aucune description disponible'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Source:</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{document.source || 'Source inconnue'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Date de publication:</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{formatDate(document.datePublication)}</p>
+                </div>
+                {document.reference && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Référence:</p>
+                    <p className="text-sm text-gray-900 dark:text-white">{document.reference}</p>
+                  </div>
+                )}
+                {document.typeAvis && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Type d&apos;avis:</p>
+                    <p className="text-sm text-gray-900 dark:text-white">{document.typeAvis}</p>
+                  </div>
+                )}
+                {document.company?.formeJuridique && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Forme juridique:</p>
+                    <p className="text-sm text-gray-900 dark:text-white">{document.company.formeJuridique}</p>
+                  </div>
+                )}
+              </div>
+              
+              {document.contenu && (
+                <div className="mt-6">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contenu:</p>
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4 max-h-40 overflow-y-auto">
+                    <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                      {document.contenu}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-8 flex justify-end space-x-3">
@@ -367,9 +487,16 @@ function DocumentModal({ document, onClose, userRole }) {
               >
                 Fermer
               </button>
-              <button className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                📥 Télécharger
-              </button>
+              {document.lienDocument && (
+                <a
+                  href={document.lienDocument}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  📥 Télécharger
+                </a>
+              )}
               {/* Admin-only actions */}
               {isAdmin && (
                 <button className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700">

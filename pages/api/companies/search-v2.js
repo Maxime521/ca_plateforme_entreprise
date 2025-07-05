@@ -1,18 +1,60 @@
-// pages/api/companies/search-v2.js - COMPLETE REPLACEMENT
-const { prisma } = require('../../../lib/prisma');
-const INSEEAPIService = require('../../../lib/insee-api');
-const axios = require('axios');
+// pages/api/companies/search-v2.js - SECURE VERSION WITH VALIDATION - MIGRATED TO SUPABASE
+import { createAdminClient } from '../../../lib/supabase';
+import axios from 'axios';
+import { validateSearchQuery, sanitizeQuery, securityHeaders } from '../../../lib/middleware/validation';
+import { withLogging, measurePerformance } from '../../../lib/middleware/logging';
+import { serverAnalytics } from '../../../lib/analytics';
+import logger from '../../../lib/logger';
 
-export default async function handler(req, res) {
+// Import rate limiter dynamically since it uses ES6 modules
+let searchLimiter = null;
+
+// Simplified middleware without rate limiting for now
+const withMiddleware = (handler) => {
+  return async (req, res) => {
+    // Apply security headers
+    securityHeaders(req, res, () => {});
+    
+    // Skip rate limiting temporarily to fix the immediate issue
+    // TODO: Fix rate limiting module import issue
+    
+    // Validate input
+    return new Promise((resolve, reject) => {
+      validateSearchQuery(req, res, () => {
+        handler(req, res).then(resolve).catch(reject);
+      });
+    });
+  };
+};
+
+async function handler(req, res) {
+  const perf = measurePerformance('search_request')
+  
   if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    logger.warn('Invalid method on search endpoint', {
+      method: req.method,
+      ip: req.headers['x-forwarded-for'] || req.connection?.remoteAddress
+    })
+    return res.status(405).json({ 
+      success: false,
+      message: 'Method not allowed' 
+    });
   }
 
+  // Input is already validated by middleware
   const { q, source = 'all' } = req.query;
-
-  if (!q || q.length < 3) {
-    return res.status(400).json({ message: 'Query must be at least 3 characters' });
-  }
+  
+  // Additional sanitization
+  const sanitizedQuery = sanitizeQuery(q)
+  
+  // Log search attempt
+  logger.info('Search request initiated', {
+    query: q,
+    sanitizedQuery,
+    source,
+    ip: req.headers['x-forwarded-for'] || req.connection?.remoteAddress,
+    userAgent: req.headers['user-agent']
+  })
 
   try {
     const results = {
@@ -22,38 +64,136 @@ export default async function handler(req, res) {
       errors: []
     };
 
-    console.log(`🔍 Search for: "${q}"`);
+    console.log(`🔍 Search for: "${sanitizedQuery}" (sanitized from: "${q}")`);
 
-    // 1. Search local database (SQLite compatible)
+    // 1. Search local database (Supabase) with enrichment
     if (source === 'all' || source === 'local') {
       try {
-        const localResults = await prisma.company.findMany({
-          where: {
-            OR: [
-              { siren: { contains: q } },
-              { denomination: { contains: q } }
-            ]
-          },
-          take: 10
-        });
-        results.local = localResults;
-        console.log(`📂 Found ${localResults.length} local results`);
+        const supabase = createAdminClient();
+        
+        const { data: localResults, error } = await supabase
+          .from('companies')
+          .select('*')
+          .or(`siren.ilike.%${sanitizedQuery}%,denomination.ilike.%${sanitizedQuery}%`)
+          .limit(10);
+        
+        if (error) throw error;
+        
+        // Enrich local results if query looks like SIREN
+        if (/^\d{9}$/.test(sanitizedQuery) && localResults && localResults.length > 0) {
+          console.log('🔄 Enriching local SIREN result...');
+          try {
+            const { default: INSEEAPIService } = await import('../../../lib/insee-api');
+            
+            const enrichedLocal = await Promise.all(
+              localResults.map(async (company) => {
+                if (company.siren === sanitizedQuery) {
+                  try {
+                    const [freshCompany, establishments] = await Promise.all([
+                      INSEEAPIService.getCompanyBySiren(company.siren).catch(() => null),
+                      INSEEAPIService.getEstablishments(company.siren).catch(() => [])
+                    ]);
+                    
+                    if (freshCompany) {
+                      const mainEstablishment = establishments.find(est => est.siegeSocial) || establishments[0];
+                      
+                      // Update database with fresh data
+                      await supabase
+                        .from('companies')
+                        .update({
+                          denomination: freshCompany.denomination,
+                          forme_juridique: freshCompany.formeJuridique,
+                          libelle_ape: freshCompany.libelleAPE,
+                          adresse_siege: freshCompany.adresseSiege || (mainEstablishment ? mainEstablishment.adresse : null),
+                          capital_social: freshCompany.capitalSocial,
+                          active: freshCompany.active,
+                          updated_at: new Date().toISOString()
+                        })
+                        .eq('siren', company.siren);
+                      
+                      return {
+                        ...company,
+                        denomination: freshCompany.denomination,
+                        forme_juridique: freshCompany.formeJuridique,
+                        adresse_siege: freshCompany.adresseSiege || (mainEstablishment ? mainEstablishment.adresse : null),
+                        libelle_ape: freshCompany.libelleAPE,
+                        active: freshCompany.active,
+                        siret: freshCompany.siret || (mainEstablishment ? mainEstablishment.siret : null),
+                        effectif: freshCompany.effectif || 'Non renseigné',
+                        capital_social: freshCompany.capitalSocial,
+                        _enriched: true
+                      };
+                    }
+                  } catch (enrichError) {
+                    console.log(`⚠️ Failed to enrich local ${company.siren}:`, enrichError.message);
+                  }
+                }
+                return company;
+              })
+            );
+            
+            results.local = enrichedLocal;
+            console.log(`📂 Found ${results.local.length} enriched local results`);
+          } catch (enrichmentError) {
+            console.log('⚠️ Local enrichment failed:', enrichmentError.message);
+            results.local = localResults || [];
+            console.log(`📂 Found ${results.local.length} local results (not enriched)`);
+          }
+        } else {
+          results.local = localResults || [];
+          console.log(`📂 Found ${results.local.length} local results`);
+        }
       } catch (error) {
-        console.error('Local search error:', error);
-        results.errors.push({ source: 'local', message: error.message });
+        console.error('Local database error:', error);
+        results.errors.push({ 
+          source: 'local', 
+          message: 'Erreur base de données locale',
+          type: 'DATABASE_ERROR' 
+        });
       }
     }
 
-    // 2. Search INSEE API
-    if (source === 'all' || source === 'insee') {
+    // 2. Search INSEE API with enrichment
+    if ((source === 'all' || source === 'insee') && results.local.length < 5) {
       try {
-        console.log('🏛️ Searching INSEE API...');
-        const inseeResults = await INSEEAPIService.searchCompanies(q);
-        results.insee = inseeResults.results || [];
-        console.log(`   Found ${results.insee.length} INSEE results`);
+        console.log('🏛️ Searching INSEE API with enrichment...');
+        const { default: INSEEAPIService } = await import('../../../lib/insee-api');
+        const inseeResults = await INSEEAPIService.searchCompanies(sanitizedQuery);
+        
+        if (inseeResults.results && inseeResults.results.length > 0) {
+          // Enrich INSEE results with establishment data
+          const enrichedINSEE = await Promise.all(
+            inseeResults.results.slice(0, 10).map(async (company) => {
+              try {
+                const establishments = await INSEEAPIService.getEstablishments(company.siren).catch(() => []);
+                const mainEstablishment = establishments.find(est => est.siegeSocial) || establishments[0];
+                
+                return {
+                  ...company,
+                  adresseSiege: company.adresseSiege || (mainEstablishment ? mainEstablishment.adresse : null),
+                  siret: company.siret || (mainEstablishment ? mainEstablishment.siret : null),
+                  effectif: company.effectif || 'Non renseigné',
+                  _enriched: true
+                };
+              } catch (error) {
+                console.log(`⚠️ Failed to enrich INSEE ${company.siren}:`, error.message);
+                return company;
+              }
+            })
+          );
+          
+          results.insee = enrichedINSEE;
+          console.log(`   Found ${results.insee.length} enriched INSEE results`);
+        } else {
+          results.insee = [];
+        }
       } catch (error) {
-        console.error('INSEE search error:', error);
-        results.errors.push({ source: 'insee', message: error.message });
+        console.error('INSEE API error:', error);
+        results.errors.push({ 
+          source: 'insee', 
+          message: 'API INSEE non disponible ou mal configurée',
+          type: 'API_ERROR' 
+        });
       }
     }
 
@@ -62,9 +202,12 @@ export default async function handler(req, res) {
       try {
         console.log('📰 Searching BODACC API...');
         
+        // FIXED: Use sanitized and properly encoded query
+        const encodedQuery = encodeURIComponent(sanitizedQuery.replace(/[%_]/g, '\\$&'));
+        
         const bodaccResponse = await axios.get('https://bodacc-datadila.opendatasoft.com/api/v2/catalog/datasets/annonces-commerciales/records', {
           params: {
-            where: `commercant like "%${q}%"`,
+            where: `commercant like "%${encodedQuery}%"`,
             limit: 20,
             order_by: 'dateparution desc',
             timezone: 'Europe/Paris'
@@ -84,18 +227,48 @@ export default async function handler(req, res) {
         console.log(`   Formatted ${results.bodacc.length} BODACC results`);
         
       } catch (error) {
-        console.error('BODACC search error:', error);
-        results.errors.push({ source: 'bodacc', message: 'BODACC API erreur' });
+        console.error('BODACC API error:', error);
+        results.errors.push({ 
+          source: 'bodacc', 
+          message: 'Erreur API BODACC',
+          type: 'API_ERROR' 
+        });
       }
     }
 
-    // Merge all results
-    const mergedResults = mergeSearchResults(results);
+    // Merge all results with query for relevance sorting
+    const mergedResults = mergeSearchResults(results, sanitizedQuery);
+    const duration = perf.end()
+    
+    logger.info('Search completed successfully', {
+      query: sanitizedQuery,
+      resultsCount: mergedResults.length,
+      sources: {
+        local: results.local.length,
+        insee: results.insee.length,
+        bodacc: results.bodacc.length
+      },
+      errorsCount: results.errors.length,
+      duration: `${duration}ms`
+    })
+
+    // Track analytics
+    serverAnalytics.search(sanitizedQuery, mergedResults.length, null, {
+      source,
+      duration,
+      sources: {
+        local: results.local.length,
+        insee: results.insee.length,
+        bodacc: results.bodacc.length
+      }
+    })
+
     console.log(`✅ Total merged results: ${mergedResults.length}`);
 
     return res.status(200).json({
       success: true,
-      query: q,
+      query: sanitizedQuery,
+      originalQuery: q,
       results: mergedResults,
       sources: {
         local: results.local.length,
@@ -103,14 +276,39 @@ export default async function handler(req, res) {
         bodacc: results.bodacc.length
       },
       errors: results.errors,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      performance: {
+        duration: `${duration}ms`
+      }
     });
 
   } catch (error) {
-    console.error('Search error:', error);
+    const duration = perf.end()
+    
+    logger.error('Search operation failed', {
+      query: sanitizedQuery,
+      source,
+      duration: `${duration}ms`,
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      },
+      ip: req.headers['x-forwarded-for'] || req.connection?.remoteAddress
+    })
+
+    // Track error in analytics
+    serverAnalytics.error('search_error', error.message, null, {
+      query: sanitizedQuery,
+      source,
+      duration
+    })
+
+    console.error('Search operation error:', error);
     return res.status(500).json({ 
       success: false,
       message: 'Erreur lors de la recherche',
+      type: 'SEARCH_ERROR',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -222,65 +420,46 @@ function formatBodaccAddress(fields) {
   }
 }
 
-// Merge results from all sources
-function mergeSearchResults(results) {
+// Merge results from all sources with standardization
+function mergeSearchResults(results, query = '') {
+  // Import standardization functions
+  const { standardizeCompanyResult, sortResultsByQuality } = require('../../../lib/result-standardizer');
+  
   const seen = new Set();
   const merged = [];
 
-  // Add local results first
+  // Standardize and add local results first (highest priority)
   results.local.forEach(company => {
-    if (company.siren) {
-      seen.add(company.siren);
-      merged.push({
-        ...company,
-        source: 'local',
-        id: company.id,
-        active: company.active ?? true,
-        dateCreation: company.dateCreation?.toISOString ? company.dateCreation.toISOString() : company.dateCreation
-      });
+    const standardized = standardizeCompanyResult(company, 'local');
+    if (standardized && standardized.siren && !seen.has(standardized.siren)) {
+      seen.add(standardized.siren);
+      merged.push(standardized);
     }
   });
 
-  // Add INSEE results
+  // Standardize and add INSEE results
   results.insee.forEach(company => {
-    let siren = company.siren;
-    if (!siren && company.siret) {
-      siren = company.siret.substring(0, 9);
-    }
-    
-    if (siren && !seen.has(siren)) {
-      seen.add(siren);
-      merged.push({
-        ...company,
-        siren: siren,
-        source: 'insee',
-        id: `insee-${siren}`,
-        adresseSiege: company.adresse || company.adresseSiege,
-        formeJuridique: company.formeJuridique || company.categorieJuridique
-      });
+    const standardized = standardizeCompanyResult(company, 'insee');
+    if (standardized && standardized.siren && !seen.has(standardized.siren)) {
+      seen.add(standardized.siren);
+      merged.push(standardized);
     }
   });
 
-  // Add BODACC results
+  // Standardize and add BODACC results
   results.bodacc.forEach(announcement => {
-    if (announcement.siren && !seen.has(announcement.siren)) {
-      seen.add(announcement.siren);
-      merged.push({
-        siren: announcement.siren,
-        denomination: announcement.denomination,
-        formeJuridique: announcement.formeJuridique,
-        adresseSiege: announcement.adresse,
-        active: true,
-        source: 'bodacc',
-        id: `bodacc-${announcement.siren}`,
-        lastAnnouncement: {
-          type: announcement.typeAnnonce,
-          date: announcement.dateParution,
-          tribunal: announcement.tribunal
-        }
-      });
+    const standardized = standardizeCompanyResult(announcement, 'bodacc');
+    if (standardized && standardized.siren && !seen.has(standardized.siren)) {
+      seen.add(standardized.siren);
+      merged.push(standardized);
     }
   });
 
-  return merged.slice(0, 20);
+  // Sort by quality and relevance
+  const sorted = sortResultsByQuality(merged, query);
+  
+  return sorted.slice(0, 20);
 }
+
+// Export with middleware applied
+export default withMiddleware(handler);

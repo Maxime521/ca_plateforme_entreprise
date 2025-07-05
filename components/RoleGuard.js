@@ -57,7 +57,7 @@ export default function RoleGuard({ children, requiredRole, requiredFeature, fal
             onClick={() => router.push('/')}
             className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-all duration-200 hover:scale-105"
           >
-            Retour à l'accueil
+            Retour à l&apos;accueil
           </button>
         </div>
       </div>
@@ -76,13 +76,13 @@ export default function RoleGuard({ children, requiredRole, requiredFeature, fal
             Fonctionnalité non disponible
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Cette fonctionnalité n'est pas disponible pour votre niveau d'accès
+            Cette fonctionnalité n&apos;est pas disponible pour votre niveau d&apos;accès
           </p>
           <button
             onClick={() => router.push('/')}
             className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-all duration-200 hover:scale-105"
           >
-            Retour à l'accueil
+            Retour à l&apos;accueil
           </button>
         </div>
       </div>
