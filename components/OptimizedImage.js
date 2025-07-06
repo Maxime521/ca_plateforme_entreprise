@@ -1,4 +1,3 @@
-// components/OptimizedImage.js - Optimized Image Component with Performance Features
 import Image from 'next/image';
 import { useState } from 'react';
 

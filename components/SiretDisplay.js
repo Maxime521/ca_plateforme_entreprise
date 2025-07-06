@@ -1,4 +1,3 @@
-// components/SiretDisplay.js - Smart SIRET display with source indicators and copy functionality
 import { useState } from 'react';
 import { InlineNumberWithCopy } from './CopyButton';
 

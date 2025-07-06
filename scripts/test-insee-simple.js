@@ -1,6 +1,3 @@
-// scripts/test-insee-simple.js
-// Run with: node scripts/test-insee-simple.js
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

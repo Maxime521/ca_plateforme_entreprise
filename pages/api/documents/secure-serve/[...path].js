@@ -1,6 +1,3 @@
-// pages/api/documents/secure-serve/[...path].js - Secure Document Serving API
-//==============================================================================
-
 import { promises as fs } from 'fs';
 import path from 'path';
 import { pipeline } from 'stream/promises';

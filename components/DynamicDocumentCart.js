@@ -1,4 +1,3 @@
-// components/DynamicDocumentCart.js - Dynamic Document Cart Components
 import dynamic from 'next/dynamic';
 
 // Loading skeleton for document cart sidebar

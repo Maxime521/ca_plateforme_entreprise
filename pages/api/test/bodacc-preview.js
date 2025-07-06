@@ -1,4 +1,3 @@
-// pages/api/test/bodacc-preview.js - Test BODACC preview functionality
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });

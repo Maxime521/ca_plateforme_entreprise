@@ -1,4 +1,3 @@
-// pages/api/companies/[siren]/documents.js - MIGRATED TO SUPABASE
 import { createAdminClient } from '../../../../lib/supabase';
 import APIService from '../../../../lib/api-services';
 

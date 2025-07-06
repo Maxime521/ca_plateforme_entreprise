@@ -1,4 +1,3 @@
-// pages/api/documents/upload.js - WORKING UPLOAD ENDPOINT - MIGRATED TO SUPABASE
 import { IncomingForm } from 'formidable';
 import { promises as fs } from 'fs';
 import path from 'path';

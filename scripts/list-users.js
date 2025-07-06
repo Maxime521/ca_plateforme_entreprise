@@ -1,4 +1,3 @@
-// scripts/list-users.js - List all users in the database
 const { createClient } = require('@supabase/supabase-js');
 const dotenv = require('dotenv');
 

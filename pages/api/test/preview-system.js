@@ -1,4 +1,3 @@
-// pages/api/test/preview-system.js - Test Preview System Functionality
 import previewCache from '../../../lib/preview-cache';
 import previewLogger from '../../../lib/preview-logger';
 

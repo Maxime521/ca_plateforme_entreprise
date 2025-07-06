@@ -1,6 +1,4 @@
-// pages/api/companies/search-resilient.js - MIGRATED TO SUPABASE
 // A resilient version that works even with partial INSEE access
-
 import { createAdminClient } from '../../../lib/supabase';
 import BODACCAPIService from '../../../lib/bodacc-api';
 import axios from 'axios';

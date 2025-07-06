@@ -1,4 +1,3 @@
-// pages/api/user/profile.js - User Profile Management API
 import { createAdminClient } from '../../../lib/supabase';
 
 export default async function handler(req, res) {

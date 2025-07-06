@@ -1,4 +1,3 @@
-// pages/api/documents/insee-pdf.js - Download INSEE "Avis de situation" PDFs
 import INSEEPDFSimple from '../../../lib/insee-pdf-simple';
 import INSEEValidation from '../../../lib/insee-validation';
 import INSEEPDFAlternative from '../../../lib/insee-pdf-alternative';

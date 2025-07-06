@@ -1,6 +1,3 @@
-// 2. Document Cart Hook - hooks/useDocumentCart.js
-//==============================================================================
-
 import { useState, useEffect, useContext, createContext } from 'react';
 
 const DocumentCartContext = createContext();

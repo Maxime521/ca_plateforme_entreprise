@@ -1,4 +1,3 @@
-// pages/api/test/generate-insee-html.js - Alternative INSEE Solution
 import INSEEOAuthService from '../../../lib/insee-oauth';
 import { promises as fs } from 'fs';
 import path from 'path';

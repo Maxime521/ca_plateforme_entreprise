@@ -1,6 +1,3 @@
-// scripts/test-fixed-insee.js
-// Run with: node scripts/test-fixed-insee.js
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

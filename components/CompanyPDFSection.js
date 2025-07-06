@@ -1,6 +1,3 @@
-// components/CompanyPDFSection.js - ENHANCED VERSION with Cart Integration
-//==============================================================================
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useDocumentCart } from '../hooks/useDocumentCart';

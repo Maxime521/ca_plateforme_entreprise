@@ -1,4 +1,3 @@
-// pages/api/test/download-insee-fixed.js - Fixed INSEE PDF Download
 import INSEEOAuthService from '../../../lib/insee-oauth';
 import { promises as fs } from 'fs';
 import path from 'path';

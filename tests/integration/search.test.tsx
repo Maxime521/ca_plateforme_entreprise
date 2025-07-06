@@ -1,4 +1,3 @@
-// Integration tests for search functionality
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '../utils/test-utils'
 import { mockFetch, mockApiSuccess, resetAllMocks } from '../utils/api-mocks'

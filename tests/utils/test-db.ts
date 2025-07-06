@@ -1,4 +1,3 @@
-// Test database utilities and setup
 import { createClient } from '@supabase/supabase-js'
 
 // Test database configuration

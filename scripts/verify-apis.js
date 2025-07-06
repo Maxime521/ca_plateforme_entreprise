@@ -1,6 +1,3 @@
-// scripts/verify-apis.js
-// Run with: node scripts/verify-apis.js
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

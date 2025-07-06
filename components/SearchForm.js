@@ -1,4 +1,3 @@
-// components/SearchForm.js - FIXED VERSION with Better Button Alignment
 import { useState } from 'react';
 
 export default function SearchForm({ onSearch, loading }) {

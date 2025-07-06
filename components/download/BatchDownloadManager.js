@@ -1,6 +1,3 @@
-// components/download/BatchDownloadManager.js - Modern Batch Download UI
-//==============================================================================
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { 

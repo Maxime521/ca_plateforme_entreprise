@@ -1,6 +1,3 @@
-// scripts/apply-database-optimization.js - Database Performance Optimization Script
-//==============================================================================
-
 import { createAdminClient } from '../lib/supabase.js'
 import fs from 'fs'
 import path from 'path'

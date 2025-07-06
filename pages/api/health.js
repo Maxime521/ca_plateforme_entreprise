@@ -1,4 +1,3 @@
-// pages/api/health.js - Health check endpoint
 import { createAdminClient } from '../../lib/supabase'
 import logger from '../../lib/logger'
 

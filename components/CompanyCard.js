@@ -1,4 +1,3 @@
-// components/CompanyCard.js - Enhanced with copy functionality
 import { InlineNumberWithCopy } from './CopyButton';
 import SiretDisplay from './SiretDisplay';
 

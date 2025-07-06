@@ -1,4 +1,3 @@
-// pages/api/serve-file/[...path].js - File Serving API
 import { promises as fs } from 'fs';
 import path from 'path';
 import { lookup } from 'mime-types';

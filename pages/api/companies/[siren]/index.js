@@ -1,4 +1,3 @@
-// pages/api/companies/[siren]/index.js - MIGRATED TO SUPABASE
 import { createAdminClient } from '../../../../lib/supabase';
 import APIService from '../../../../lib/api-services';
 import { validateSiren, securityHeaders } from '../../../../lib/middleware/validation';

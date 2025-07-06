@@ -1,6 +1,3 @@
-// scripts/apply-db-optimizations.js - Apply Database Performance Optimizations
-//==============================================================================
-
 const { createClient } = require('@supabase/supabase-js');
 const dotenv = require('dotenv');
 const fs = require('fs');

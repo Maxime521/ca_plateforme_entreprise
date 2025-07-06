@@ -1,4 +1,3 @@
-// components/AnalyticsCharts.js - Separated Chart Components for Dynamic Loading
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 
 // Colors for charts

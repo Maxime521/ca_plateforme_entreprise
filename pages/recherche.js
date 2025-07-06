@@ -1,4 +1,3 @@
-// pages/recherche.js - Search page redirect
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';

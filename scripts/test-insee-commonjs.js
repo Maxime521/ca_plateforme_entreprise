@@ -1,6 +1,3 @@
-// scripts/test-insee-commonjs.js
-// Run with: node scripts/test-insee-commonjs.js
-
 const dotenv = require('dotenv');
 const path = require('path');
 const axios = require('axios');

@@ -1,4 +1,3 @@
-// scripts/update-user-profile.js - Update User Display Names
 const { createAdminClient } = require('../lib/supabase');
 const dotenv = require('dotenv');
 

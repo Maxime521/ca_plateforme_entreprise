@@ -1,4 +1,3 @@
-// pages/api/companies/search-v2.js - SECURE VERSION WITH VALIDATION - MIGRATED TO SUPABASE
 import { createAdminClient } from '../../../lib/supabase';
 import axios from 'axios';
 import { validateSearchQuery, sanitizeQuery, securityHeaders } from '../../../lib/middleware/validation';

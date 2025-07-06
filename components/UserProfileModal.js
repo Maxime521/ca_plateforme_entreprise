@@ -1,4 +1,3 @@
-// components/UserProfileModal.js - User Profile Management Modal
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 

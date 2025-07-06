@@ -1,8 +1,3 @@
-//==============================================================================
-// utils/rolePermissions.js - FIXED COMPLETE VERSION
-//==============================================================================
-
-// Define role-based permissions
 export const ROLES = {
   ADMIN: 'admin',
   USER: 'user'

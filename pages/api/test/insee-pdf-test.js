@@ -1,4 +1,3 @@
-// pages/api/test/insee-pdf-test.js - Test INSEE PDF Download (Simple No-Auth)
 import INSEEPDFSimple from '../../../lib/insee-pdf-simple';
 import INSEEValidation from '../../../lib/insee-validation';
 

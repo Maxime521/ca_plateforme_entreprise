@@ -1,4 +1,3 @@
-// components/AvisSituationCard.js - Specialized component for INSEE AVIS DE SITUATION documents
 import { useState } from 'react';
 import { useDocumentCart } from '../hooks/useDocumentCart';
 

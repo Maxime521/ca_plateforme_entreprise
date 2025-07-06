@@ -1,7 +1,3 @@
-//==============================================================================
-// pages/documents.js - FIXED VERSION with Banner & Icon Removal
-//==============================================================================
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/Layout';

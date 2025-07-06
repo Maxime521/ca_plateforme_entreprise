@@ -1,6 +1,3 @@
-// scripts/test-insee-activation.js
-// Run with: node scripts/test-insee-activation.js
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

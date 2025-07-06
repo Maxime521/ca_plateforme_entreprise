@@ -1,6 +1,3 @@
-// pages/api/cache/stats.js - Cache Statistics and Management API
-//==============================================================================
-
 import { getCacheStats } from '../../../lib/middleware/caching'
 import logger from '../../../lib/logger'
 

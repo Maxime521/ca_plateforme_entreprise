@@ -1,4 +1,3 @@
-// components/BODACCReportViewer.js - Enhanced View with Scaling Controls
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ScalablePDFViewer from './ScalablePDFViewer';

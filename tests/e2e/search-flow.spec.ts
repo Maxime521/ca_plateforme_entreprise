@@ -1,4 +1,3 @@
-// E2E tests for main search functionality
 import { test, expect } from '@playwright/test'
 
 test.describe('Company Search Flow', () => {

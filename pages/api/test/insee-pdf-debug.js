@@ -1,4 +1,3 @@
-// pages/api/test/insee-pdf-debug.js - Debug INSEE PDF API Issues
 import INSEEOAuthService from '../../../lib/insee-oauth';
 import INSEEAPIService from '../../../lib/insee-api';
 import INSEEValidation from '../../../lib/insee-validation';

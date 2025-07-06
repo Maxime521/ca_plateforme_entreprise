@@ -1,4 +1,3 @@
-// components/EnhancedDocumentCart.js - Document Cart with Real File Integration
 import { useState, useEffect } from 'react';
 import { useDocumentCart } from '../hooks/useDocumentCart';
 import { useBODACCReports } from './BODACCReportViewer';

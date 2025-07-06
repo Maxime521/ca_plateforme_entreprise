@@ -1,5 +1,3 @@
-// scripts/migrate-to-supabase.js
-// Data migration script from SQLite to Supabase PostgreSQL
 const { PrismaClient } = require('@prisma/client');
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

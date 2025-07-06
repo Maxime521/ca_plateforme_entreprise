@@ -1,4 +1,3 @@
-// pages/api/documents/insee-batch.js - Batch download INSEE "Avis de situation" PDFs
 import INSEEOAuthService from '../../../lib/insee-oauth';
 import INSEEAPIService from '../../../lib/insee-api';
 import INSEEValidation from '../../../lib/insee-validation';

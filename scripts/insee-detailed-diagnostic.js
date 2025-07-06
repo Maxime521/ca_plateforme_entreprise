@@ -1,6 +1,3 @@
-// scripts/insee-detailed-diagnostic.js
-// Run with: node scripts/insee-detailed-diagnostic.js
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

@@ -1,6 +1,3 @@
-// components/DocumentCartSidebar.js - ENHANCED VERSION
-//==============================================================================
-
 import { useState } from 'react';
 import { useDocumentCart } from '../hooks/useDocumentCart';
 import { useAuth } from '../hooks/useAuth';

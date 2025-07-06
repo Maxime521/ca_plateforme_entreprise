@@ -1,5 +1,3 @@
-// scripts/migrate-simple.js
-// Simple migration that handles UUID mapping properly
 const { PrismaClient } = require('@prisma/client');
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: '.env.local' });

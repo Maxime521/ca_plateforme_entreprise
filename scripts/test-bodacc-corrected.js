@@ -1,6 +1,3 @@
-// scripts/test-bodacc-corrected.js
-// Run with: node scripts/test-bodacc-corrected.js
-
 import axios from 'axios';
 
 console.log('🧪 Testing Corrected BODACC API');

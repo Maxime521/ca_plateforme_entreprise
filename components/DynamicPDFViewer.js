@@ -1,4 +1,3 @@
-// components/DynamicPDFViewer.js - Dynamic PDF Viewer Wrapper
 import dynamic from 'next/dynamic';
 
 // Loading component for PDF viewer

@@ -1,4 +1,3 @@
-// pages/api/companies/[siren]/sync.js - MIGRATED TO SUPABASE
 import { createAdminClient } from '../../../../lib/supabase';
 import APIService from '../../../../lib/api-services';
 

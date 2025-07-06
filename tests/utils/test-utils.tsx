@@ -1,4 +1,3 @@
-// Test utilities for React Testing Library with custom providers
 import React, { ReactElement } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

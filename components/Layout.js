@@ -1,6 +1,3 @@
-// components/Layout.js - FIXED VERSION with Admin Icon and Source Badge Fix
-//==============================================================================
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';

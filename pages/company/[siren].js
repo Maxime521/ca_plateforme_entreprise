@@ -1,6 +1,3 @@
-// pages/company/[siren].js - ENHANCED with BODACC Viewer Integration
-//==============================================================================
-
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';

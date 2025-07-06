@@ -1,4 +1,3 @@
-// ===== pages/companies.js - COMPLETE FILE =====
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/Layout';

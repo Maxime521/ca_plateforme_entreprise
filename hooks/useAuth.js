@@ -1,4 +1,3 @@
-// hooks/useAuth.js - ENHANCED VERSION with Auto-Redirect - MIGRATED TO SUPABASE
 import { useState, useEffect, useContext, createContext } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabase';

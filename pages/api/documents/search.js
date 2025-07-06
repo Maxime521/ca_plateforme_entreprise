@@ -1,4 +1,3 @@
-// pages/api/documents/search.js - Documents search API with Supabase
 import { createAdminClient } from '../../../lib/supabase';
 
 export default async function handler(req, res) {

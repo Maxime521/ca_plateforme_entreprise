@@ -1,4 +1,3 @@
-// pages/api/companies/[siren]/details.js - MIGRATED TO SUPABASE
 import { createAdminClient } from '../../../../lib/supabase';
 import INSEEAPIService from '../../../../lib/insee-api';
 import BODACCAPIService from '../../../../lib/bodacc-api';

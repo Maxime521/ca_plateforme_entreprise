@@ -1,4 +1,3 @@
-// components/UnifiedDocumentPreview.js - Unified Document Preview Component
 import { useState, useEffect, useRef } from 'react';
 import { ScalablePDFViewer } from './ScalablePDFViewer';
 

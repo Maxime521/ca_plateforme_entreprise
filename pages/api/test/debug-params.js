@@ -1,4 +1,3 @@
-// pages/api/test/debug-params.js - Debug route parameter parsing
 export default async function handler(req, res) {
   return res.status(200).json({
     method: req.method,

@@ -1,4 +1,3 @@
-// Simple debug page to test if Next.js can start without auth
 export default function Debug() {
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial' }}>

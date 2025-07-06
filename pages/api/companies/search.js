@@ -1,4 +1,3 @@
-// pages/api/companies/search.js - MIGRATED TO SUPABASE with Data Enrichment
 import { createAdminClient } from '../../../lib/supabase';
 import APIService from '../../../lib/api-services';
 import INSEEAPIService from '../../../lib/insee-api';

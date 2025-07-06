@@ -1,4 +1,3 @@
-// pages/api/test/insee-company-data.js - Get INSEE Data and Generate HTML Report
 import INSEEOAuthService from '../../../lib/insee-oauth';
 import { promises as fs } from 'fs';
 import path from 'path';

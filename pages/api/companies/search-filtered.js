@@ -1,4 +1,3 @@
-// pages/api/companies/search-filtered.js - Enhanced company search with filters and enrichment
 import { createAdminClient } from '../../../lib/supabase';
 import APIService from '../../../lib/api-services';
 import INSEEAPIService from '../../../lib/insee-api';

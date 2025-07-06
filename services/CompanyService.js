@@ -1,5 +1,3 @@
-// services/CompanyService.js - Centralized business logic
-
 class CompanyService {
   constructor() {
     this.inseeService = new INSEEService();

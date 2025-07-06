@@ -1,5 +1,3 @@
-// scripts/supabase-quick-setup.js
-// Quick setup script that combines schema setup and basic testing
 require('dotenv').config({ path: '.env.local' });
 const { setupSchema, verifySchema } = require('./setup-supabase');
 const { testSupabaseConnection } = require('./test-supabase-connection');

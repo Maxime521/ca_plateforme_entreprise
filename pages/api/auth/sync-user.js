@@ -1,4 +1,3 @@
-//pages/api/auth/sync-user.js - Enhanced to handle admin assignment - MIGRATED TO SUPABASE
 import { createAdminClient } from '../../../lib/supabase';
 
 export default async function handler(req, res) {

@@ -1,5 +1,3 @@
-// utils/logger.js - Structured logging
-
 class Logger {
   constructor(context = 'APP') {
     this.context = context;

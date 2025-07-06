@@ -1,4 +1,3 @@
-// pages/admin/monitoring.js - Monitoring dashboard for admins
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Layout from '../../components/Layout'

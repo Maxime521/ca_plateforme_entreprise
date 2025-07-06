@@ -1,4 +1,3 @@
-// components/BatchINSEEDownload.js - Batch download component for INSEE AVIS DE SITUATION documents
 import { useState } from 'react';
 
 export default function BatchINSEEDownload({ companies = [], onBatchComplete }) {

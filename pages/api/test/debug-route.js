@@ -1,4 +1,3 @@
-// pages/api/test/debug-route.js - Debug route similar to preview route
 export default async function handler(req, res) {
   const { params } = req.query;
   

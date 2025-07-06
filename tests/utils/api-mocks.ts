@@ -1,4 +1,3 @@
-// API mocking utilities for testing
 import { jest } from '@jest/globals'
 
 // Mock Supabase client

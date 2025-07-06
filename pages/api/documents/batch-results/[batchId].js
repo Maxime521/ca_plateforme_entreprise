@@ -1,6 +1,3 @@
-// pages/api/documents/batch-results/[batchId].js - Batch Results Download API
-//==============================================================================
-
 import { promises as fs } from 'fs';
 import path from 'path';
 import archiver from 'archiver';

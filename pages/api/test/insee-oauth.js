@@ -1,4 +1,3 @@
-// pages/api/test/insee-oauth.js - Test INSEE OAuth
 import INSEEOAuthService from '../../../lib/insee-oauth';
 
 export default async function handler(req, res) {

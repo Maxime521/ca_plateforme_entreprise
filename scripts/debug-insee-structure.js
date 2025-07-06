@@ -1,6 +1,3 @@
-// scripts/debug-insee-structure.js
-// Run with: node scripts/debug-insee-structure.js
-
 const dotenv = require('dotenv');
 const path = require('path');
 const axios = require('axios');

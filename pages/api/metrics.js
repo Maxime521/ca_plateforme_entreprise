@@ -1,4 +1,3 @@
-// pages/api/metrics.js - Application metrics endpoint
 import { createAdminClient } from '../../lib/supabase'
 import logger from '../../lib/logger'
 

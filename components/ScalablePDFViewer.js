@@ -1,4 +1,3 @@
-// components/ScalablePDFViewer.js - Universal Scalable Document Viewer
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function ScalablePDFViewer({ 

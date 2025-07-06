@@ -1,6 +1,3 @@
-// pages/api/documents/batch-progress/[batchId].js - Batch Download Progress API
-//==============================================================================
-
 import { batchDownloadManager } from '../batch-download';
 import documentAuth from '../../../../lib/auth/document-auth';
 import logger from '../../../../lib/logger';

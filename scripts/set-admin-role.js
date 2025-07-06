@@ -1,5 +1,3 @@
-// scripts/set-admin-role.js
-// Script to manually set admin role for specific user
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: '.env.local' });
 

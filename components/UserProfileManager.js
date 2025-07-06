@@ -1,4 +1,3 @@
-// components/UserProfileManager.js - Standalone User Profile Management
 import { useState } from 'react';
 import UserProfileModal from './UserProfileModal';
 

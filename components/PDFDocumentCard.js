@@ -1,6 +1,3 @@
-// components/PDFDocumentCard.js (Enhanced version)
-//==============================================================================
-
 import { useState } from 'react';
 import { useDocumentCart } from '../hooks/useDocumentCart';
 

@@ -1,6 +1,3 @@
-// components/DocumentCartIcon.js - Amazon-Style Shopping Cart with Floating Variant
-//==============================================================================
-
 import { useDocumentCart } from '../hooks/useDocumentCart';
 
 export default function DocumentCartIcon({ floating = false, customClass = '' }) {

@@ -1,6 +1,3 @@
-// pages/api/companies/search-cached.js - HIGH-PERFORMANCE CACHED SEARCH API
-//==============================================================================
-
 import { createAdminClient } from '../../../lib/supabase';
 import axios from 'axios';
 import { validateSearchQuery, sanitizeQuery, securityHeaders } from '../../../lib/middleware/validation';

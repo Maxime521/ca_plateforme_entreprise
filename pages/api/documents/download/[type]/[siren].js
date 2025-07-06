@@ -1,4 +1,3 @@
-// pages/api/documents/download/[type]/[siren].js - Server-side document download API
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });

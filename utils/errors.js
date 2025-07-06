@@ -1,6 +1,3 @@
-// utils/errors.js - Enhanced Error Handling System
-// =============================================================================
-
 /**
  * Base application error class
  * All custom errors should extend this class

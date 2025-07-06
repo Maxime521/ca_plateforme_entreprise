@@ -1,4 +1,3 @@
-// services/DatabaseService.js - Database operations
 class DatabaseService {
   async searchCompanies(query, limit = 20) {
     const companies = await prisma.company.findMany({

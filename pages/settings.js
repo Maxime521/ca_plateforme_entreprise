@@ -1,7 +1,3 @@
-//==============================================================================
-// pages/settings.js - FIXED VERSION with User Icon Cleanup
-//==============================================================================
-
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import RoleGuard from '../components/RoleGuard';

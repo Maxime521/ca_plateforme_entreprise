@@ -1,4 +1,3 @@
-// pages/api/companies/search-enriched.js - Enhanced search with guaranteed enrichment
 import { createAdminClient } from '../../../lib/supabase';
 import INSEEAPIService from '../../../lib/insee-api';
 

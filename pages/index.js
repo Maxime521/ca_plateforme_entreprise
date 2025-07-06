@@ -1,6 +1,3 @@
-// pages/index.js - FIXED VERSION with Working Company Details
-//==============================================================================
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';

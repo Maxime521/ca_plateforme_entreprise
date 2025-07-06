@@ -1,6 +1,3 @@
-// components/CacheMonitor.js - Real-time Cache Performance Monitor
-//==============================================================================
-
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 

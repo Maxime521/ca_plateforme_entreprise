@@ -1,6 +1,3 @@
-// pages/api/companies/search-ultra-fast.js - Ultra-Fast Database-Optimized Search API
-//==============================================================================
-
 import { validateSearchQuery, sanitizeQuery, securityHeaders } from '../../../lib/middleware/validation';
 import { withLogging, measurePerformance } from '../../../lib/middleware/logging';
 import { serverAnalytics } from '../../../lib/analytics';

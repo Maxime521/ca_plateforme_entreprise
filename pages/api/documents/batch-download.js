@@ -1,6 +1,3 @@
-// pages/api/documents/batch-download.js - Enhanced Batch Download System
-//==============================================================================
-
 import { Worker } from 'worker_threads';
 import { EventEmitter } from 'events';
 import path from 'path';

@@ -1,6 +1,3 @@
-// pages/api/companies/search-simple-cache.js - Simple Memory Cache Implementation
-//==============================================================================
-
 import { createAdminClient } from '../../../lib/supabase';
 import axios from 'axios';
 import { validateSearchQuery, sanitizeQuery, securityHeaders } from '../../../lib/middleware/validation';

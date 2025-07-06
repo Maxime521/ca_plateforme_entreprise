@@ -1,4 +1,3 @@
-// components/CopyButton.js - Modern copy button component
 import { useState } from 'react';
 
 export default function CopyButton({ 

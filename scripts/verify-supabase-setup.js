@@ -1,5 +1,3 @@
-// scripts/verify-supabase-setup.js
-// Verify that Supabase database setup was successful
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: '.env.local' });
 

@@ -1,4 +1,3 @@
-// components/PDFViewerClient.js - Client-side PDF viewer with PDF.js integration
 import { useState, useEffect, useRef } from 'react';
 
 export default function PDFViewerClient({ 

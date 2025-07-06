@@ -1,4 +1,3 @@
-// pages/api/documents/preview/[...params].js - Document Preview Proxy API
 import { promises as fs } from 'fs';
 import path from 'path';
 import previewCache from '../../../../lib/preview-cache';

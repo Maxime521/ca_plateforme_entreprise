@@ -1,6 +1,3 @@
-// scripts/discover-bodacc-fields.js
-// Run with: node scripts/discover-bodacc-fields.js
-
 import axios from 'axios';
 
 console.log('🔍 BODACC API Field Discovery');

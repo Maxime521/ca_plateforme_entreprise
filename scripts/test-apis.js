@@ -1,6 +1,3 @@
-// scripts/test-apis.js
-// Run with: node scripts/test-apis.js
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

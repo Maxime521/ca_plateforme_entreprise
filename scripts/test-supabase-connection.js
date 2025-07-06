@@ -1,5 +1,3 @@
-// scripts/test-supabase-connection.js
-// Test script to verify Supabase connection and basic functionality
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: '.env.local' });
 

@@ -1,4 +1,3 @@
-// pages/api/convert/html-to-pdf.js - PDF Conversion Service
 import { promises as fs } from 'fs';
 import path from 'path';
 
