@@ -205,15 +205,6 @@ function LayoutWithCartProvider({ children }) {
             {/* FIXED: Cart in top right corner for mobile */}
             <div className="flex items-center space-x-3">
               <DocumentCartIcon />
-              
-              <button
-                onClick={toggleTheme}
-                className="p-3 rounded-xl bg-gray-100 dark:bg-dark-card hover:bg-gray-200 dark:hover:bg-dark-border transition-all duration-200 hover:scale-105"
-              >
-                <span className="text-xl">
-                  {isDark ? '☀️' : '🌙'}
-                </span>
-              </button>
             </div>
           </div>
         </div>
@@ -231,23 +222,7 @@ function LayoutWithCartProvider({ children }) {
       {!cartSidebarOpen && (
         <div className="hidden lg:flex fixed top-8 right-8 z-50 flex-col items-end gap-4">
           {/* Theme Toggle on top */}
-          <button
-            onClick={toggleTheme}
-            aria-label={isDark ? "Passer au mode clair" : "Passer au mode sombre"}
-            title={isDark ? "Passer au mode clair" : "Passer au mode sombre"}
-            className="w-14 h-14 p-3 rounded-xl bg-white/90 dark:bg-dark-surface/90 backdrop-blur-xl border border-gray-200/50 dark:border-dark-border/50 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-card transition-all duration-200 hover:scale-105 shadow-2xl hover:shadow-3xl flex items-center justify-center"
-          >
-            <span className="text-2xl transition-transform group-hover:scale-110">
-              {isDark ? '☀️' : '🌙'}
-            </span>
-          </button>
           {/* Cart Icon below */}
-          <DocumentCartIcon
-            floating={true}
-            aria-label="Ouvrir le panier de documents"
-            title="Ouvrir le panier de documents"
-            customClass="w-14 h-14"
-          />
         </div>
       )}
     </div>
@@ -285,18 +260,6 @@ function SidebarContent({ navigation, user, userRole, isAdmin, logout, toggleThe
               ) : (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
               )}
-            </svg>
-          </button>
-        )}
-        
-        {/* Close button for mobile */}
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="ml-auto text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 lg:hidden"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         )}
