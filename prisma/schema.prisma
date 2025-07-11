@@ -1,0 +1,93 @@
+// prisma/schema.prisma 
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  uid         String   @unique
+  email       String   @unique
+  displayName String?
+  photoURL    String?
+  role        String   @default("user")
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
+  @@index([lastLoginAt])
+}
+
+model Company {
+  id                   String             @id @default(cuid())
+  siren                String             @unique
+  denomination         String
+  dateCreation         DateTime?
+  dateImmatriculation  DateTime?
+  active               Boolean            @default(true)
+  adresseSiege         String?
+  natureEntreprise     String?
+  formeJuridique       String?
+  codeAPE              String?
+  libelleAPE           String?
+  capitalSocial        Float?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  documents            Document[]
+  financialRatios      FinancialRatio[]
+
+  // 🚀 PERFORMANCE INDEXES - Add these!
+  @@index([siren])                    // Primary search field
+  @@index([denomination])             // Name search
+  @@index([active])                   // Filter by status
+  @@index([codeAPE])                  // Industry search
+  @@index([formeJuridique])          // Legal form filter
+  @@index([updatedAt])               // Recent updates
+  @@index([denomination, active])     // Composite for common query
+  @@index([codeAPE, active])         // Industry + active companies
+}
+
+model Document {
+  id              String   @id @default(cuid())
+  companyId       String
+  datePublication DateTime
+  typeDocument    String
+  source          String
+  typeAvis        String?
+  reference       String?
+  description     String?
+  contenu         String?
+  lienDocument    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // 🚀 PERFORMANCE INDEXES
+  @@index([companyId])               // Foreign key
+  @@index([source])                  // Filter by source
+  @@index([typeDocument])            // Filter by type
+  @@index([datePublication])         // Sort by date
+  @@index([companyId, datePublication]) // Company docs by date
+}
+
+model FinancialRatio {
+  id        String   @id @default(cuid())
+  companyId String
+  year      Int
+  ratioType String
+  value     Float
+  createdAt DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, year, ratioType])
+  @@index([companyId])
+  @@index([year])
+  @@index([ratioType])
+}
