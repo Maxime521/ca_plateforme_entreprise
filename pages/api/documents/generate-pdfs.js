@@ -74,34 +74,46 @@ export default async function handler(req, res) {
       console.log('⚠️ BODACC test failed:', error.message);
     }
 
-    // Generate document sources information
+    // Generate document sources information with truly unique IDs
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
     const documents = [
       {
-        id: `insee_${siren}`,
+        id: `insee-${siren}-${timestamp}-${randomSuffix}`,
         name: `INSEE_Avis_Situation_${siren}.pdf`,
         type: 'insee',
         source: 'INSEE SIRENE',
-        url: `https://api-avis-situation-sirene.insee.fr/identification/pdf/${siren.substring(0,3)} ${siren.substring(3,6)} ${siren.substring(6,9)} 00001`,
+        url: `/api/documents/insee-pdf`, // Use our download API
         siren: siren,
-        description: 'Avis de situation administrative (certificat INSEE)',
+        siret: req.query.siret || null, // Pass SIRET if available
+        description: 'Avis de situation au répertoire Sirene',
+        officialName: 'Avis de situation au répertoire Sirene',
+        displayName: 'AVIS DE SITUATION',
         format: 'PDF',
         requiresAuth: true,
         available: hasInseeCredentials,
+        downloadable: hasInseeCredentials,
         error: !hasInseeCredentials ? 'INSEE credentials required in .env.local' : undefined,
         notes: hasInseeCredentials ? 
-          'Credentials configured - OAuth token implementation needed' : 
+          '✅ Prêt pour téléchargement - Certificat officiel INSEE' : 
           'Add INSEE_CONSUMER_KEY and INSEE_CONSUMER_SECRET to .env.local',
-        documentation: 'https://api.insee.fr/catalogue/site/themes/wso2/subthemes/insee/pages/item-info.jag?name=SireneAvisSituation&version=V3&provider=insee'
+        documentation: 'https://api.insee.fr/catalogue/site/themes/wso2/subthemes/insee/pages/item-info.jag?name=SireneAvisSituation&version=V3&provider=insee',
+        features: [
+          'Document officiel INSEE',
+          'Situation administrative complète', 
+          'Valide pour démarches administratives',
+          'Téléchargement automatique'
+        ]
       },
       {
-        id: `bodacc_${siren}`,
-        name: `BODACC_Data_${siren}.json`,
+        id: `bodacc-${siren}-${timestamp}-${randomSuffix}-2`,
+        name: `BODACC_${siren}.pdf`,
         type: 'bodacc',
         source: 'BODACC (Journal Officiel)',
         url: `https://bodacc-datadila.opendatasoft.com/api/v2/catalog/datasets/annonces-commerciales/records?where=registre%20like%20%22${siren}%25%22&limit=50`,
         siren: siren,
         description: `Annonces commerciales officielles (${bodaccInfo.count} trouvées)`,
-        format: 'JSON',
+        format: 'PDF',
         requiresAuth: false,
         available: bodaccInfo.status === 'working',
         tested: bodaccInfo.tested,
@@ -114,7 +126,7 @@ export default async function handler(req, res) {
         realTimeTest: true
       },
       {
-        id: `inpi_${siren}`,
+        id: `inpi-${siren}-${timestamp}-${randomSuffix}-3`,
         name: `INPI_RNE_${siren}.pdf`,
         type: 'inpi',
         source: 'INPI (Registre National des Entreprises)',

@@ -1,0 +1,14 @@
+// Basic test to verify Jest setup
+describe('Basic Test Setup', () => {
+  it('should run tests', () => {
+    expect(true).toBe(true)
+  })
+
+  it('should have access to environment variables', () => {
+    expect(process.env.NODE_ENV).toBeDefined()
+  })
+
+  it('should mock fetch', () => {
+    expect(global.fetch).toBeDefined()
+  })
+})
