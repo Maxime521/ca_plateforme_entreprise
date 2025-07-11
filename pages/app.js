@@ -1,21 +1,13 @@
+// pages/_app.js - Simplified App (No Firebase Required)
 import '../styles/globals.css'
-import { QueryClient, QueryClientProvider } from 'react-query'
-import { useState } from 'react'
+import { ThemeProvider } from 'next-themes'
 
 export default function App({ Component, pageProps }) {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: false,
-        retry: 1,
-        staleTime: 5 * 60 * 1000, // 5 minutes
-      },
-    },
-  }))
-
   return (
-    <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <Component {...pageProps} />
-    </QueryClientProvider>
+      {/* Simple toast notification div - you can add react-hot-toast later */}
+      <div id="toast-root"></div>
+    </ThemeProvider>
   )
 }
